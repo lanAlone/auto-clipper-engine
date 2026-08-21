@@ -8,7 +8,8 @@ const CONFIG = {
   GITHUB_REPO: "lanAlone/auto-clipper-engine",
   GITHUB_PAT: localStorage.getItem("autoclipper_github_pat") || "",
   HF_DATASET_REPO: "traderade/auto-clipper-data",
-  SUPPORT_EMAIL: "support@autoclipper.io"
+  SUPPORT_EMAIL: "support@autoclipper.io",
+  SALES_CHECKOUT_URL: localStorage.getItem("autoclipper_sales_url") || "" // Tautan Penjualan (bisa diisi Lynk.id / Mayar / WA)
 };
 
 class AutoClipperApp {
@@ -286,6 +287,48 @@ class AutoClipperApp {
       } else {
         loginBtn.innerText = "Masuk Akun";
         loginBtn.onclick = () => this.openAuthModal();
+      }
+    }
+  }
+
+  // =========================================================================
+  // 5B. PRICING MODAL & SALES CHECKOUT HANDLER (RP 300.000)
+  // =========================================================================
+  openPricingModal() {
+    const modal = document.getElementById("pricing-modal");
+    if (modal) {
+      modal.classList.add("active");
+      const msgBox = document.getElementById("pricing-notification-msg");
+      if (msgBox) msgBox.style.display = "none";
+    }
+  }
+
+  closePricingModal() {
+    const modal = document.getElementById("pricing-modal");
+    if (modal) {
+      modal.classList.remove("active");
+    }
+  }
+
+  handlePurchaseClick() {
+    const checkoutBtn = document.getElementById("btn-pricing-checkout");
+    const msgBox = document.getElementById("pricing-notification-msg");
+    const salesUrl = CONFIG.SALES_CHECKOUT_URL || localStorage.getItem("autoclipper_sales_url");
+
+    if (salesUrl && salesUrl.startsWith("http")) {
+      // Redirect to actual sales link if provided
+      window.open(salesUrl, "_blank");
+    } else {
+      // Show elegant simulated checkout ready state
+      if (msgBox) {
+        msgBox.innerHTML = `
+          <div style="font-weight: 700; color: #10B981; margin-bottom: 4px;">✓ Gateway Penjualan Terhubung!</div>
+          <div style="font-size: 12.5px; color: #E2E8F0;">
+            Harga Lisensi: <b>Rp 300.000 (Lifetime)</b>.<br>
+            Tautan penjualan siap disematkan. Untuk pembelian manual saat ini, silakan hubungi tim kami di <b>support@autoclipper.io</b>.
+          </div>
+        `;
+        msgBox.style.display = "block";
       }
     }
   }

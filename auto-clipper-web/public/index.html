@@ -43,14 +43,16 @@
           <div class="nav-links">
             <a class="nav-link" href="#features">Fitur</a>
             <a class="nav-link" href="#how-it-works">Cara Kerja</a>
+            <a class="nav-link" href="#pricing">Harga</a>
             <a class="nav-link" href="#testimonials">Testimoni</a>
             <a class="nav-link" href="#trust-center">Keamanan</a>
             <a class="nav-link" href="#faq">FAQ</a>
           </div>
 
           <div class="nav-actions">
+            <button class="btn btn-secondary" onclick="app.openPricingModal()" style="border-color: rgba(56, 189, 248, 0.4); color: #38BDF8;">💎 Beli Akses (Rp 300rb)</button>
             <button id="nav-login-btn" class="btn btn-secondary" onclick="app.openAuthModal()">Masuk Akun</button>
-            <button class="btn btn-primary" onclick="app.handleCtaClick()">Mulai Buat Klip (Gratis)</button>
+            <button class="btn btn-primary" onclick="app.handleCtaClick()">Mulai Buat Klip</button>
           </div>
         </nav>
       </div>
@@ -373,6 +375,75 @@
           </div>
         </section>
 
+        <!-- SECTION: PRICING / BELI AKSES PRO -->
+        <section id="pricing" class="section-wrapper">
+          <div class="section-header">
+            <span class="section-tag">PILIHAN AKSES</span>
+            <h2 class="section-title">Investasi Cerdas untuk Pertumbuhan Channel</h2>
+            <p class="section-subtitle">
+              Dapatkan akses penuh seumur hidup tanpa biaya langganan bulanan yang mencekik.
+            </p>
+          </div>
+
+          <div style="max-width: 680px; margin: 0 auto;">
+            <div class="bento-card" style="border: 2px solid rgba(56, 189, 248, 0.45); background: linear-gradient(180deg, rgba(14, 20, 34, 0.95) 0%, rgba(9, 12, 20, 0.95) 100%); box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(56, 189, 248, 0.2); text-align: center; padding: 44px 36px;">
+              
+              <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); padding: 6px 18px; border-radius: 24px; color: #38BDF8; font-size: 13px; font-weight: 700; margin-bottom: 20px;">
+                🔥 PROMO EARLY BIRD — LIFETIME ACCESS
+              </div>
+
+              <h3 style="font-size: 28px; margin-bottom: 8px; color: #FFFFFF;">Auto-Clipper Pro Lifetime</h3>
+              <p style="color: #94A3B8; font-size: 14.5px; margin-bottom: 24px;">Sekali bayar, nikmati semua fitur AI Auto-Clipper tanpa batas.</p>
+
+              <div style="display: flex; align-items: baseline; justify-content: center; gap: 12px; margin-bottom: 28px;">
+                <span style="font-size: 18px; color: #64748B; text-decoration: line-through;">Rp 750.000</span>
+                <span style="font-size: 48px; font-weight: 800; color: #FFFFFF; font-family: 'Space Grotesk', sans-serif;">Rp 300.000</span>
+                <span style="font-size: 14px; color: #10B981; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 3px 10px; border-radius: 8px;">Hemat 60%</span>
+              </div>
+
+              <div style="text-align: left; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--card-border); border-radius: 16px; padding: 24px; margin-bottom: 30px;">
+                <h4 style="font-size: 15px; color: #FFFFFF; margin-bottom: 14px;">Semua yang Anda Dapatkan:</h4>
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; font-size: 14px; color: #E2E8F0;">
+                  <li style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #10B981; font-weight: 800;">✓</span> Unlimited Pemrosesan Video Panjang YouTube ke Klip 9:16
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #10B981; font-weight: 800;">✓</span> 4 Preset Subtitle Kinetik Otomatis (MrBeast, Hormozi, Neon, Clean)
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #10B981; font-weight: 800;">✓</span> Pemotongan Suara Halus (Word-Boundary Snapping 0.2s)
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #10B981; font-weight: 800;">✓</span> Sistem Anti-Blokir YouTube 4-Tier Stealth Engine
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #10B981; font-weight: 800;">✓</span> Koneksi Multi-AI Gratis (Groq Whisper, Gemini, DeepSeek, Mistral)
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #10B981; font-weight: 800;">✓</span> Generator Hook Medsos & Jam Posting Otomatis
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #10B981; font-weight: 800;">✓</span> Update Fitur Baru Selamanya & Akses Komunitas VIP
+                  </li>
+                </ul>
+              </div>
+
+              <button class="btn btn-primary" style="width: 100%; font-size: 16px; padding: 18px;" onclick="app.openPricingModal()">
+                💎 Beli Akses Pro Sekarang (Rp 300.000)
+              </button>
+              
+              <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 18px; color: #64748B; font-size: 12.5px;">
+                <span>🔒 Pembayaran Aman</span>
+                <span>•</span>
+                <span>⚡ Akses Instan</span>
+                <span>•</span>
+                <span>🛡️ Garansi Kepuasan</span>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
         <!-- SECTION: TRUST & COOKIE SECURITY CENTER -->
         <section id="trust-center" class="section-wrapper">
           <div class="trust-container">
@@ -516,6 +587,13 @@
 
         <!-- Sidebar Bottom Footer -->
         <div style="border-top: 1px solid var(--card-border); padding-top: 16px;">
+          <!-- Upgrade Pro Card in Sidebar -->
+          <div style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(129, 140, 248, 0.08) 100%); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 12px; margin-bottom: 14px; text-align: center;">
+            <div style="font-size: 11.5px; font-weight: 700; color: #38BDF8; margin-bottom: 4px;">👑 LISENSI RESMI PRO</div>
+            <div style="font-size: 14px; font-weight: 800; color: #FFFFFF; font-family: 'Space Grotesk', sans-serif; margin-bottom: 6px;">Rp 300.000 <span style="font-size: 10px; color: #94A3B8; font-weight: 400;">/ Lifetime</span></div>
+            <button class="btn btn-primary" style="width: 100%; font-size: 11.5px; padding: 6px 10px;" onclick="app.openPricingModal()">💎 Beli Akses</button>
+          </div>
+
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="width: 8px; height: 8px; border-radius: 50%; background: #10B981; box-shadow: 0 0 8px #10B981;"></span>
@@ -819,6 +897,58 @@
         <div id="auth-error-msg" style="display: none; background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; text-align: center; color: #F43F5E; font-size: 13.5px;"></div>
 
         <button class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 15px;" onclick="app.submitAuth()">Masuk Sekarang</button>
+      </div>
+    </div>
+
+    <!-- ========================================================================
+         VIEW 4: PRICING POPUP MODAL (BELI AKSES PRO)
+         ======================================================================== -->
+    <div id="pricing-modal" class="modal-overlay">
+      <div class="modal-card" style="max-width: 520px;">
+        <button class="modal-close" onclick="app.closePricingModal()">&times;</button>
+        
+        <div style="text-align: center; margin-bottom: 22px;">
+          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); padding: 4px 14px; border-radius: 20px; color: #38BDF8; font-size: 12px; font-weight: 700; margin-bottom: 12px;">
+            💎 LISENSI RESMI AUTO-CLIPPER PRO
+          </div>
+          <h2 style="font-size: 24px; font-weight: 700; color: #FFFFFF;">Beli Akses Penuh (Lifetime)</h2>
+          <p style="color: #94A3B8; font-size: 13.5px; margin-top: 4px;">Investasi sekali untuk produksi video pendek viral seumur hidup</p>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 13px; color: #94A3B8; text-decoration: line-through; margin-bottom: 2px;">Harga Normal: Rp 750.000</div>
+          <div style="font-size: 38px; font-weight: 800; color: #FFFFFF; font-family: 'Space Grotesk', sans-serif;">
+            Rp 300.000 <span style="font-size: 13px; color: #10B981; font-weight: 700; background: rgba(16, 185, 129, 0.15); padding: 2px 8px; border-radius: 6px;">Hemat 60%</span>
+          </div>
+          <div style="font-size: 12px; color: #38BDF8; font-weight: 600; margin-top: 4px;">✓ Sekali Bayar • Bebas Biaya Bulanan • Akses Selamanya</div>
+        </div>
+
+        <div style="margin-bottom: 22px;">
+          <div style="font-size: 13px; font-weight: 700; color: #FFFFFF; margin-bottom: 10px;">Fitur & Fasilitas yang Anda Dapatkan:</div>
+          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #CBD5E1;">
+            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #10B981;">✓</span> Akun Akses Penuh ke Dashboard Studio Video</li>
+            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #10B981;">✓</span> Unlimited Pemrosesan Video & Klip 9:16 Vertikal</li>
+            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #10B981;">✓</span> Semua Gaya Subtitle Animasi (MrBeast, Hormozi, Neon, Clean)</li>
+            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #10B981;">✓</span> Sistem Anti-Blokir YouTube & Word-Snapping 0.2s</li>
+            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #10B981;">✓</span> Panduan Setup Lengkap API Gratis & Support VIP 24/7</li>
+          </ul>
+        </div>
+
+        <!-- Checkout / Sales Link Action Button -->
+        <button id="btn-pricing-checkout" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 15.5px;" onclick="app.handlePurchaseClick()">
+          🛒 Lanjutkan ke Pembayaran (Rp 300.000)
+        </button>
+
+        <div style="margin-top: 14px; text-align: center;">
+          <div style="font-size: 11.5px; color: #64748B; margin-bottom: 6px;">Metode Pembayaran Didukung:</div>
+          <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; font-size: 11px; color: #94A3B8;">
+            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">QRIS</span>
+            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">GoPay / OVO / Dana</span>
+            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">Virtual Account BCA/Mandiri/BRI</span>
+          </div>
+        </div>
+
+        <div id="pricing-notification-msg" style="display: none; margin-top: 14px; padding: 12px; border-radius: 10px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38BDF8; font-size: 13px; text-align: center;"></div>
       </div>
     </div>
 
