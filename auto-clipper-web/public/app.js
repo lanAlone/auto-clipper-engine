@@ -31,6 +31,8 @@ class AutoClipperApp {
     this.initAmbientCanvas();
     this.initSpotlightTracker();
     this.initScrollReveal();
+    this.initNavbarShrink();
+    this.initStatCounters();
     this.updateAuthUI();
 
     // Check URL hash for routing
@@ -71,7 +73,31 @@ class AutoClipperApp {
         const y = e.clientY - rect.top;
         card.style.setProperty("--mouse-x", `${x}px`);
         card.style.setProperty("--mouse-y", `${y}px`);
+
+        // 3D Magnetic Tilt (subtle)
+        if (
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom
+        ) {
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          const tiltX = ((y - centerY) / centerY) * -3; // max 3deg
+          const tiltY = ((x - centerX) / centerX) * 3;
+          card.style.transform = `perspective(800px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-4px)`;
+        }
       });
+    });
+
+    // Reset tilt on mouse leave
+    document.addEventListener("mouseover", (e) => {
+      const card = e.target.closest(".spotlight-card");
+      if (!card) {
+        document.querySelectorAll(".spotlight-card").forEach(c => {
+          c.style.transform = "";
+        });
+      }
     });
   }
 
@@ -87,12 +113,94 @@ class AutoClipperApp {
           }
         });
       },
-      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+      { threshold: 0.08, rootMargin: "0px 0px -60px 0px" }
     );
 
     document.querySelectorAll(".reveal-on-scroll").forEach((el) => {
       observer.observe(el);
     });
+  }
+
+  // =========================================================================
+  // 2B. NAVBAR SHRINK ON SCROLL
+  // =========================================================================
+  initNavbarShrink() {
+    const navbar = document.querySelector(".landing-navbar");
+    if (!navbar) return;
+
+    let ticking = false;
+    window.addEventListener("scroll", () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          if (window.scrollY > 50) {
+            navbar.classList.add("scrolled");
+          } else {
+            navbar.classList.remove("scrolled");
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+  }
+
+  // =========================================================================
+  // 2C. ANIMATED STAT COUNTERS
+  // =========================================================================
+  initStatCounters() {
+    const counters = document.querySelectorAll(".stat-number");
+    if (!counters.length) return;
+
+    const counterObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !entry.target.dataset.counted) {
+            entry.target.dataset.counted = "true";
+            this.animateCounter(entry.target);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    counters.forEach((el) => counterObserver.observe(el));
+  }
+
+  animateCounter(el) {
+    const text = el.innerText.trim();
+    // Extract numeric part
+    const match = text.match(/^([\d,.]+)/);
+    if (!match) return;
+
+    const numStr = match[1];
+    const suffix = text.slice(numStr.length); // e.g., "+"
+    const target = parseFloat(numStr.replace(/,/g, ""));
+    const hasDecimal = numStr.includes(".");
+    const duration = 1800;
+    const start = performance.now();
+
+    const step = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out expo
+      const ease = 1 - Math.pow(1 - progress, 4);
+      const current = target * ease;
+
+      if (hasDecimal) {
+        el.innerText = current.toFixed(1) + suffix;
+      } else if (target >= 1000) {
+        el.innerText = Math.floor(current).toLocaleString() + suffix;
+      } else {
+        el.innerText = Math.floor(current) + suffix;
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        el.innerText = text; // restore original
+      }
+    };
+    requestAnimationFrame(step);
   }
 
   // =========================================================================
