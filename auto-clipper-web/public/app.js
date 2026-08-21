@@ -1,7 +1,7 @@
 /**
- * Auto-Clipper Pro — $10K Production Web Application Controller
- * Featuring: Strict Route Separation (Landing vs Dashboard App Shell),
- * Visual Subtitle Card Selector, Filmstrip Animated Stepper, and Serverless Multi-Cloud Engine.
+ * Auto-Clipper Pro — 21st.dev Magic UI Production Web Controller
+ * Featuring: Strict Routing, Visual Card Subtitle Selector,
+ * Live oEmbed Preview, Filmstrip Stepper, and Serverless Multi-Cloud Engine.
  */
 
 const CONFIG = {
@@ -57,7 +57,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 1. DYNAMIC AMBIENT PARTICLE CANVAS
+  // 1. DYNAMIC AMBIENT PARTICLE CANVAS (21st.dev Style)
   // =========================================================================
   initAmbientCanvas() {
     const canvas = document.getElementById("ambient-canvas");
@@ -170,6 +170,15 @@ class AutoClipperApp {
 
     if (triggerBtn) {
       triggerBtn.classList.add("active");
+    }
+  }
+
+  fillSampleUrl() {
+    const sample = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    const input = document.getElementById("dash-yt-url");
+    if (input) {
+      input.value = sample;
+      this.onYoutubeUrlChange();
     }
   }
 

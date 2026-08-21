@@ -1,28 +1,26 @@
 /* ==========================================================================
-   AUTO-CLIPPER PRO — $10K SAAS DESIGN SYSTEM & CINEMATIC UI/UX
-   Built with 21st.dev Component Architecture & Framer Motion Principles
-   Layouts: (1) Conversion-Obsessed Landing Page, (2) Modern App Shell Dashboard
+   AUTO-CLIPPER PRO — 21ST.DEV MAGIC UI & FRAMER MOTION CINEMATIC SYSTEM
+   Featuring: Border Beam, Shimmer CTA, Neon Mesh, and Fluid Sidebar Shell
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap');
 
 :root {
-  /* Cinema Obsidian Palette */
-  --bg-deep: #07080B;
-  --bg-surface: rgba(14, 18, 28, 0.72);
-  --bg-surface-hover: rgba(22, 28, 44, 0.88);
-  --bg-surface-active: rgba(30, 41, 59, 0.95);
-  --sidebar-bg: #0B0E17;
+  /* Canvas Base */
+  --bg-deep: #060709;
+  --bg-surface: rgba(13, 17, 26, 0.78);
+  --bg-surface-hover: rgba(20, 26, 40, 0.92);
+  --sidebar-bg: #090C14;
   --card-border: rgba(255, 255, 255, 0.08);
-  --card-border-hover: rgba(56, 189, 248, 0.4);
+  --card-border-active: rgba(56, 189, 248, 0.6);
 
-  /* Typography Colors */
+  /* Typography */
   --text-pure: #FFFFFF;
   --text-main: #F1F5F9;
   --text-muted: #94A3B8;
   --text-dim: #64748B;
 
-  /* Futuristic Accents */
+  /* Magic UI Neon Accents */
   --accent-cyan: #38BDF8;
   --accent-blue: #3B82F6;
   --accent-violet: #8B5CF6;
@@ -30,12 +28,13 @@
   --accent-emerald: #10B981;
   --accent-amber: #F59E0B;
 
-  /* Ambient Glows */
-  --glow-cyan: 0 0 40px rgba(56, 189, 248, 0.22);
+  /* Glow Effects */
+  --glow-cyan: 0 0 36px rgba(56, 189, 248, 0.22);
+  --glow-pink: 0 0 36px rgba(236, 72, 153, 0.22);
   --glow-strong: 0 0 60px rgba(56, 189, 248, 0.45);
-  --glow-primary: 0 4px 28px rgba(255, 255, 255, 0.25);
+  --glow-shimmer: 0 4px 30px rgba(255, 255, 255, 0.3);
 
-  /* Physics & Transitions */
+  /* Spring Curves */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -62,7 +61,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Ambient Interactive Canvas */
+/* Background Ambient Dynamic Canvas */
 #ambient-canvas {
   position: fixed;
   top: 0;
@@ -92,7 +91,7 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   1. FLOATING FROSTED GLASS NAVBAR (LANDING PAGE)
+   1. 21ST.DEV FLOATING FROSTED GLASS NAVBAR
    ========================================================================== */
 .landing-navbar-wrapper {
   position: sticky;
@@ -106,12 +105,12 @@ h1, h2, h3, h4, h5, .font-heading {
   align-items: center;
   justify-content: space-between;
   padding: 12px 28px;
-  background: rgba(11, 15, 25, 0.75);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
+  background: rgba(11, 15, 25, 0.78);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
   border: 1px solid var(--card-border);
   border-radius: 20px;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), 0 0 20px rgba(56, 189, 248, 0.05);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.7), 0 0 24px rgba(56, 189, 248, 0.06);
   max-width: 1200px;
   margin: 0 auto;
   transition: all 0.3s var(--ease-spring);
@@ -183,7 +182,7 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   2. BUTTONS & MICRO-INTERACTIONS
+   2. SHIMMER BUTTONS & 21ST.DEV BUTTON MICRO-INTERACTIONS
    ========================================================================== */
 .btn {
   display: inline-flex;
@@ -208,31 +207,40 @@ h1, h2, h3, h4, h5, .font-heading {
   transform: scale(0.97);
 }
 
-/* High-Contrast Solid Crisp White Primary CTA */
+/* 21st.dev Shimmer Button */
 .btn-primary {
   background: #FFFFFF;
   color: #08090D;
   border: 1px solid #FFFFFF;
-  box-shadow: var(--glow-primary);
+  box-shadow: var(--glow-shimmer);
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    60deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transform: rotate(30deg);
+  animation: shimmerLight 4s infinite linear;
+}
+
+@keyframes shimmerLight {
+  0% { transform: translate(-100%, -100%) rotate(30deg); }
+  100% { transform: translate(100%, 100%) rotate(30deg); }
 }
 
 .btn-primary:hover {
   background: #F8FAFC;
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(255, 255, 255, 0.4);
-}
-
-.btn-glow-cyan {
-  background: linear-gradient(135deg, #0284C7 0%, #2563EB 100%);
-  color: #FFFFFF;
-  border: 1px solid rgba(56, 189, 248, 0.5);
-  box-shadow: var(--glow-cyan);
-}
-
-.btn-glow-cyan:hover {
-  background: linear-gradient(135deg, #38BDF8 0%, #3B82F6 100%);
-  transform: translateY(-2px);
-  box-shadow: var(--glow-strong);
+  box-shadow: 0 8px 36px rgba(255, 255, 255, 0.45);
 }
 
 .btn-secondary {
@@ -270,7 +278,7 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   3. LANDING PAGE HERO SECTION (CONVERSION-FIRST)
+   3. HERO SECTION (CONVERSION-FIRST)
    ========================================================================== */
 .hero {
   text-align: center;
@@ -327,7 +335,7 @@ h1, h2, h3, h4, h5, .font-heading {
   flex-wrap: wrap;
 }
 
-/* Hero Interactive Mockup Showcase */
+/* 21st.dev Border Beam Container */
 .interactive-simulator-card {
   max-width: 1020px;
   margin: 0 auto 72px auto;
@@ -471,10 +479,10 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   4. INFINITE SOCIAL PROOF MARQUEE
+   4. INFINITE MARQUEE
    ========================================================================== */
 .social-proof-section {
-  padding: 40px 0;
+  padding: 38px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   overflow: hidden;
@@ -492,8 +500,8 @@ h1, h2, h3, h4, h5, .font-heading {
 
 .marquee-track {
   display: flex;
-  gap: 50px;
-  animation: marqueeScroll 25s linear infinite;
+  gap: 54px;
+  animation: marqueeScroll 24s linear infinite;
   white-space: nowrap;
 }
 
@@ -871,7 +879,7 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   11. DEDICATED APP SHELL DASHBOARD LAYOUT (/dashboard)
+   11. DEDICATED APP SHELL DASHBOARD (/dashboard)
    ========================================================================== */
 .app-shell {
   display: flex;
@@ -939,7 +947,7 @@ h1, h2, h3, h4, h5, .font-heading {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #07080B;
+  background: #060709;
 }
 
 @media (max-width: 900px) {
@@ -1000,8 +1008,8 @@ h1, h2, h3, h4, h5, .font-heading {
 
 .subtitle-style-card.active {
   border-color: #38BDF8;
-  background: rgba(56, 189, 248, 0.1);
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.2);
+  background: rgba(56, 189, 248, 0.12);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.25);
 }
 
 .style-preview-thumbnail {
@@ -1015,7 +1023,6 @@ h1, h2, h3, h4, h5, .font-heading {
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Subtitle Style Visual Variations */
 .sub-demo-mrbeast {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 800;
@@ -1031,9 +1038,8 @@ h1, h2, h3, h4, h5, .font-heading {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 800;
   font-size: 13.5px;
-  color: #FFFFFF;
-  background: #38BDF8;
   color: #08090D;
+  background: #38BDF8;
   padding: 5px 12px;
   border-radius: 6px;
   box-shadow: 0 0 14px rgba(56, 189, 248, 0.6);
@@ -1086,7 +1092,6 @@ h1, h2, h3, h4, h5, .font-heading {
   50% { opacity: 0.35; transform: scale(0.85); }
 }
 
-/* Progress filmstrip animation */
 .filmstrip-loader {
   display: flex;
   gap: 6px;
@@ -1111,7 +1116,6 @@ h1, h2, h3, h4, h5, .font-heading {
   50% { background: var(--accent-cyan); transform: scaleY(1.15); box-shadow: 0 0 12px var(--accent-cyan); }
 }
 
-/* Chunked Section Cards */
 .chunk-card {
   background: var(--bg-surface);
   border: 1px solid var(--card-border);
@@ -1149,6 +1153,26 @@ h1, h2, h3, h4, h5, .font-heading {
 .form-control:focus {
   border-color: var(--accent-cyan);
   box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.28);
+}
+
+.sample-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #38BDF8;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px dashed rgba(56, 189, 248, 0.35);
+  padding: 4px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.sample-chip:hover {
+  background: rgba(56, 189, 248, 0.18);
+  color: #FFFFFF;
 }
 
 /* Video Gallery Grid */
