@@ -1,17 +1,18 @@
 /* ==========================================================================
-   AUTO-CLIPPER PRO — 21ST.DEV & FRAMER MOTION CINEMATIC UI/UX
-   Aesthetic: Cinema Obsidian (#07080B) + Frosted Glass + Ambient Neon Accents
-   Design Intelligence: UI/UX Pro Max Standard (WCAG AA Contrast, 0 CLS, Crisp SVG)
+   AUTO-CLIPPER PRO — $10K SAAS DESIGN SYSTEM & CINEMATIC UI/UX
+   Built with 21st.dev Component Architecture & Framer Motion Principles
+   Layouts: (1) Conversion-Obsessed Landing Page, (2) Modern App Shell Dashboard
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap');
 
 :root {
-  /* Cinema Obsidian Base */
+  /* Cinema Obsidian Palette */
   --bg-deep: #07080B;
   --bg-surface: rgba(14, 18, 28, 0.72);
   --bg-surface-hover: rgba(22, 28, 44, 0.88);
   --bg-surface-active: rgba(30, 41, 59, 0.95);
+  --sidebar-bg: #0B0E17;
   --card-border: rgba(255, 255, 255, 0.08);
   --card-border-hover: rgba(56, 189, 248, 0.4);
 
@@ -31,9 +32,8 @@
 
   /* Ambient Glows */
   --glow-cyan: 0 0 40px rgba(56, 189, 248, 0.22);
-  --glow-violet: 0 0 40px rgba(139, 92, 246, 0.22);
-  --glow-pink: 0 0 40px rgba(236, 72, 153, 0.22);
   --glow-strong: 0 0 60px rgba(56, 189, 248, 0.45);
+  --glow-primary: 0 4px 28px rgba(255, 255, 255, 0.25);
 
   /* Physics & Transitions */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
@@ -62,7 +62,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 1. Dynamic Ambient Interactive Canvas */
+/* Ambient Interactive Canvas */
 #ambient-canvas {
   position: fixed;
   top: 0;
@@ -71,7 +71,7 @@ body {
   height: 100vh;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 .content-wrapper {
@@ -92,16 +92,16 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   2. FLOATING FROSTED GLASS NAVBAR (21ST.DEV STYLE)
+   1. FLOATING FROSTED GLASS NAVBAR (LANDING PAGE)
    ========================================================================== */
-.navbar-wrapper {
+.landing-navbar-wrapper {
   position: sticky;
-  top: 20px;
+  top: 18px;
   z-index: 1000;
   padding: 0 24px;
 }
 
-.navbar {
+.landing-navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -168,9 +168,8 @@ h1, h2, h3, h4, h5, .font-heading {
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
   cursor: pointer;
-  position: relative;
 }
 
 .nav-link:hover {
@@ -184,7 +183,7 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   3. BUTTONS & FRAMER MOTION-INSPIRED MICRO-INTERACTIONS
+   2. BUTTONS & MICRO-INTERACTIONS
    ========================================================================== */
 .btn {
   display: inline-flex;
@@ -209,18 +208,18 @@ h1, h2, h3, h4, h5, .font-heading {
   transform: scale(0.97);
 }
 
-/* High-Contrast Solid White Primary */
+/* High-Contrast Solid Crisp White Primary CTA */
 .btn-primary {
   background: #FFFFFF;
   color: #08090D;
   border: 1px solid #FFFFFF;
-  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+  box-shadow: var(--glow-primary);
 }
 
 .btn-primary:hover {
   background: #F8FAFC;
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 32px rgba(255, 255, 255, 0.4);
 }
 
 .btn-glow-cyan {
@@ -249,6 +248,18 @@ h1, h2, h3, h4, h5, .font-heading {
   transform: translateY(-1px);
 }
 
+.btn-outline {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #FFFFFF;
+}
+
 .btn-logout {
   background: rgba(244, 63, 94, 0.08);
   color: #F43F5E;
@@ -259,11 +270,11 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   4. HERO SECTION (EXPANSIVE & CINEMATIC)
+   3. LANDING PAGE HERO SECTION (CONVERSION-FIRST)
    ========================================================================== */
 .hero {
   text-align: center;
-  padding: 90px 0 60px 0;
+  padding: 84px 0 54px 0;
   position: relative;
 }
 
@@ -278,21 +289,21 @@ h1, h2, h3, h4, h5, .font-heading {
   color: var(--accent-cyan);
   font-size: 13.5px;
   font-weight: 600;
-  margin-bottom: 30px;
+  margin-bottom: 28px;
   box-shadow: 0 0 24px rgba(56, 189, 248, 0.12);
   animation: floatSlow 4.5s infinite ease-in-out;
 }
 
 @keyframes floatSlow {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  50% { transform: translateY(-5px); }
 }
 
 .hero-title {
   font-size: clamp(2.8rem, 5.6vw, 4.8rem);
   font-weight: 800;
   line-height: 1.08;
-  margin: 0 auto 24px auto;
+  margin: 0 auto 22px auto;
   max-width: 1040px;
   background: linear-gradient(180deg, #FFFFFF 30%, #E2E8F0 75%, #94A3B8 100%);
   -webkit-background-clip: text;
@@ -301,10 +312,10 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 .hero-subtitle {
-  font-size: 18px;
+  font-size: 18.5px;
   color: var(--text-muted);
-  max-width: 780px;
-  margin: 0 auto 40px auto;
+  max-width: 760px;
+  margin: 0 auto 38px auto;
   line-height: 1.75;
 }
 
@@ -312,16 +323,14 @@ h1, h2, h3, h4, h5, .font-heading {
   display: flex;
   justify-content: center;
   gap: 18px;
-  margin-bottom: 64px;
+  margin-bottom: 60px;
   flex-wrap: wrap;
 }
 
-/* ==========================================================================
-   5. LIVE HERO INTERACTIVE SIMULATOR (VIDEO-FIRST HERO PLAYGROUND)
-   ========================================================================== */
+/* Hero Interactive Mockup Showcase */
 .interactive-simulator-card {
   max-width: 1020px;
-  margin: 0 auto 80px auto;
+  margin: 0 auto 72px auto;
   background: var(--bg-surface);
   border: 1px solid var(--card-border);
   border-radius: 28px;
@@ -408,7 +417,6 @@ h1, h2, h3, h4, h5, .font-heading {
   box-shadow: 0 0 35px rgba(56, 189, 248, 0.25);
 }
 
-/* Animated laser scanning bar */
 .laser-scanner {
   position: absolute;
   top: 0;
@@ -427,7 +435,6 @@ h1, h2, h3, h4, h5, .font-heading {
   100% { top: 100%; opacity: 0; }
 }
 
-/* Subtitle Kinetic Pop Animation */
 .kinetic-subtitle-box {
   animation: popInSpring 0.5s var(--ease-spring);
 }
@@ -438,7 +445,6 @@ h1, h2, h3, h4, h5, .font-heading {
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* Audio Wave Equalizer Bars */
 .waveform-container {
   display: flex;
   align-items: center;
@@ -465,13 +471,62 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   6. STATS COUNTER BAR
+   4. INFINITE SOCIAL PROOF MARQUEE
+   ========================================================================== */
+.social-proof-section {
+  padding: 40px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  position: relative;
+  background: rgba(9, 12, 18, 0.5);
+}
+
+.marquee-container {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent 0%, black 15%, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 15%, black 85%, transparent 100%);
+}
+
+.marquee-track {
+  display: flex;
+  gap: 50px;
+  animation: marqueeScroll 25s linear infinite;
+  white-space: nowrap;
+}
+
+@keyframes marqueeScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.partner-logo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  opacity: 0.65;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.partner-logo-item:hover {
+  opacity: 1;
+  color: var(--text-main);
+}
+
+/* ==========================================================================
+   5. STATS METRICS BAR
    ========================================================================== */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 24px;
-  margin: 70px 0 110px 0;
+  margin: 64px 0 90px 0;
 }
 
 .stat-card {
@@ -506,16 +561,16 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   7. 21ST.DEV ASYMMETRIC BENTO GRID
+   6. 21ST.DEV VALUE PROPOSITION BENTO GRID
    ========================================================================== */
 .section-wrapper {
-  padding: 110px 0;
+  padding: 100px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .section-header {
   text-align: center;
-  margin-bottom: 68px;
+  margin-bottom: 64px;
 }
 
 .section-tag {
@@ -604,7 +659,6 @@ h1, h2, h3, h4, h5, .font-heading {
   line-height: 1.7;
 }
 
-/* Micro-components inside Bento Cards */
 .ping-simulator-box {
   display: flex;
   gap: 10px;
@@ -646,7 +700,7 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   8. 4-STEP WORKFLOW GRID
+   7. 4-STEP WORKFLOW GRID
    ========================================================================== */
 .step-grid {
   display: grid;
@@ -696,6 +750,59 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
+   8. TESTIMONIALS & CREATOR SOCIAL PROOF
+   ========================================================================== */
+.testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.testimonial-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 30px;
+  backdrop-filter: blur(20px);
+  transition: all 0.3s var(--ease-spring);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.testimonial-card:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+}
+
+.testimonial-quote {
+  font-size: 14.5px;
+  color: var(--text-main);
+  line-height: 1.75;
+  margin-bottom: 20px;
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.author-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1E293B, #0F172A);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* ==========================================================================
    9. TRUST CENTER & 1-CLICK BOOKMARKLET
    ========================================================================== */
 .trust-container {
@@ -729,51 +836,289 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   10. STUDIO AI WORKSPACE
+   10. FAQ ACCORDION
    ========================================================================== */
-.studio-container {
-  padding: 40px 0 90px 0;
+.faq-list {
+  max-width: 840px;
+  margin: 0 auto;
 }
 
-.studio-header {
+.faq-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 18px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.faq-item:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.faq-question {
+  font-weight: 600;
+  font-size: 16px;
+  color: #FFFFFF;
+}
+
+.faq-answer {
+  color: var(--text-muted);
+  font-size: 14.5px;
+  line-height: 1.7;
+  margin-top: 12px;
+}
+
+/* ==========================================================================
+   11. DEDICATED APP SHELL DASHBOARD LAYOUT (/dashboard)
+   ========================================================================== */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  z-index: 10;
+}
+
+/* Left Sidebar */
+.app-sidebar {
+  width: 260px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--card-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px 18px;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
+  transition: transform 0.3s var(--ease-spring);
+}
+
+.sidebar-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 24px;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar-nav-item:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-nav-item.active {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38BDF8;
+}
+
+/* Dashboard Main Content Area */
+.app-main {
+  margin-left: 260px;
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #07080B;
+}
+
+@media (max-width: 900px) {
+  .app-sidebar {
+    transform: translateX(-100%);
+  }
+  .app-main {
+    margin-left: 0;
+  }
+}
+
+.app-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 32px;
-  padding: 22px 30px;
+  padding: 18px 36px;
+  background: rgba(11, 14, 23, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--card-border);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.app-body {
+  padding: 36px;
+  flex: 1;
+  max-width: 1140px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   12. VISUAL CARD SELECTOR (SUBTITLE STYLES)
+   ========================================================================== */
+.subtitle-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.subtitle-style-card {
+  background: rgba(14, 18, 28, 0.8);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.25s var(--ease-spring);
+  text-align: center;
+  position: relative;
+}
+
+.subtitle-style-card:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  transform: translateY(-2px);
+}
+
+.subtitle-style-card.active {
+  border-color: #38BDF8;
+  background: rgba(56, 189, 248, 0.1);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.2);
+}
+
+.style-preview-thumbnail {
+  height: 90px;
+  background: #030407;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Subtitle Style Visual Variations */
+.sub-demo-mrbeast {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800;
+  font-size: 13.5px;
+  color: #FDE047;
+  background: rgba(0,0,0,0.85);
+  padding: 5px 12px;
+  border-radius: 6px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+}
+
+.sub-demo-hormozi {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800;
+  font-size: 13.5px;
+  color: #FFFFFF;
+  background: #38BDF8;
+  color: #08090D;
+  padding: 5px 12px;
+  border-radius: 6px;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.6);
+}
+
+.sub-demo-neon {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800;
+  font-size: 13.5px;
+  color: #EC4899;
+  text-shadow: 0 0 12px #EC4899;
+  background: rgba(20, 10, 25, 0.85);
+  padding: 5px 12px;
+  border-radius: 6px;
+}
+
+.sub-demo-clean {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: #FFFFFF;
+  background: rgba(255,255,255,0.15);
+  padding: 5px 12px;
+  border-radius: 6px;
+}
+
+/* ==========================================================================
+   13. STEPPER & ANIMATED LOADER FEEDBACK
+   ========================================================================== */
+.stepper-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  padding: 26px 30px;
+  margin: 26px 0;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+}
+
+.pulse-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  box-shadow: 0 0 14px var(--accent-cyan);
+  animation: pulseGlow 1.8s infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.85); }
+}
+
+/* Progress filmstrip animation */
+.filmstrip-loader {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.film-cell {
+  width: 16px;
+  height: 22px;
+  background: rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 3px;
+  animation: filmStrip 1.2s infinite ease-in-out;
+}
+
+.film-cell:nth-child(2) { animation-delay: 0.2s; }
+.film-cell:nth-child(3) { animation-delay: 0.4s; }
+.film-cell:nth-child(4) { animation-delay: 0.6s; }
+
+@keyframes filmStrip {
+  0%, 100% { background: rgba(56, 189, 248, 0.2); transform: scaleY(0.8); }
+  50% { background: var(--accent-cyan); transform: scaleY(1.15); box-shadow: 0 0 12px var(--accent-cyan); }
+}
+
+/* Chunked Section Cards */
+.chunk-card {
   background: var(--bg-surface);
   border: 1px solid var(--card-border);
   border-radius: 20px;
+  padding: 30px;
+  margin-bottom: 24px;
   backdrop-filter: blur(20px);
-}
-
-.studio-tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 34px;
-  border-bottom: 1px solid var(--card-border);
-  padding-bottom: 14px;
-  overflow-x: auto;
-}
-
-.studio-tab-btn {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--text-muted);
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-  padding: 10px 20px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.studio-tab-btn.active {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.22);
-  color: #FFFFFF;
 }
 
 .form-group {
@@ -806,30 +1151,6 @@ h1, h2, h3, h4, h5, .font-heading {
   box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.28);
 }
 
-/* Stepper Progress Bar */
-.stepper-box {
-  background: var(--bg-surface);
-  border: 1px solid var(--card-border);
-  border-radius: 16px;
-  padding: 24px 28px;
-  margin: 26px 0;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
-}
-
-.pulse-indicator {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--accent-cyan);
-  box-shadow: 0 0 14px var(--accent-cyan);
-  animation: pulseGlow 1.8s infinite;
-}
-
-@keyframes pulseGlow {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.35; transform: scale(0.85); }
-}
-
 /* Video Gallery Grid */
 .gallery-grid {
   display: grid;
@@ -855,7 +1176,7 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   11. AUTH MODAL
+   14. AUTH MODAL
    ========================================================================== */
 .modal-overlay {
   position: fixed;
@@ -898,42 +1219,7 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   12. FAQ ACCORDION
-   ========================================================================== */
-.faq-list {
-  max-width: 840px;
-  margin: 0 auto;
-}
-
-.faq-item {
-  background: var(--bg-surface);
-  border: 1px solid var(--card-border);
-  border-radius: 16px;
-  padding: 24px 28px;
-  margin-bottom: 18px;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-.faq-item:hover {
-  border-color: rgba(56, 189, 248, 0.35);
-}
-
-.faq-question {
-  font-weight: 600;
-  font-size: 16px;
-  color: #FFFFFF;
-}
-
-.faq-answer {
-  color: var(--text-muted);
-  font-size: 14.5px;
-  line-height: 1.7;
-  margin-top: 12px;
-}
-
-/* ==========================================================================
-   13. FOOTER
+   15. FOOTER
    ========================================================================== */
 .footer {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
