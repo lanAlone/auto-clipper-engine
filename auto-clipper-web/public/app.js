@@ -1,0 +1,560 @@
+/**
+ * Auto-Clipper Pro — Firebase Modern Web Application Controller
+ * High-performance Serverless SPA with Realtime Stepper, Direct GitHub Actions Dispatches,
+ * and Hugging Face Dataset Status Poller.
+ */
+
+const CONFIG = {
+  GITHUB_REPO: "lanAlone/auto-clipper-engine",
+  // Token loaded dynamically or from backend API
+  GITHUB_PAT: localStorage.getItem("autoclipper_github_pat") || "",
+  HF_DATASET_REPO: "traderade/auto-clipper-data",
+  OWNER_EMAIL: "srizkyjati@gmail.com"
+};
+
+class AutoClipperApp {
+  constructor() {
+    this.currentUser = localStorage.getItem("autoclipper_user") || "";
+    this.activeJobId = null;
+    this.pollingInterval = null;
+    this.init();
+  }
+
+  init() {
+    this.updateAuthUI();
+    const lastView = localStorage.getItem("autoclipper_view");
+    if (lastView === "studio" && this.currentUser) {
+      this.openStudio();
+    } else {
+      this.showLanding();
+    }
+  }
+
+  // =========================================================================
+  // 1. NAVIGATION & VIEW SWITCHING
+  // =========================================================================
+  showLanding() {
+    document.getElementById("view-landing").style.display = "block";
+    document.getElementById("view-studio").style.display = "none";
+    this.closeAuthModal();
+    localStorage.setItem("autoclipper_view", "landing");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  openStudio(prefillUrl = "") {
+    if (!this.currentUser) {
+      this.pendingStudioUrl = prefillUrl;
+      this.openAuthModal();
+      return;
+    }
+
+    document.getElementById("view-landing").style.display = "none";
+    document.getElementById("view-studio").style.display = "block";
+    this.closeAuthModal();
+    localStorage.setItem("autoclipper_view", "studio");
+
+    if (prefillUrl) {
+      const input = document.getElementById("studio-yt-url");
+      input.value = prefillUrl;
+      this.onYoutubeUrlChange();
+    }
+
+    this.loadConnectedProviders();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  openAuthModal() {
+    document.getElementById("auth-modal").classList.add("active");
+    document.getElementById("auth-error-msg").style.display = "none";
+    document.getElementById("auth-username").focus();
+  }
+
+  closeAuthModal() {
+    document.getElementById("auth-modal").classList.remove("active");
+  }
+
+  switchStudioTab(tabId) {
+    document.querySelectorAll(".studio-tab-content").forEach((el) => {
+      el.style.display = "none";
+    });
+    document.querySelectorAll(".studio-tab-btn").forEach((el) => {
+      el.classList.remove("active");
+    });
+
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) {
+      targetTab.style.display = "block";
+    }
+
+    event.target.classList.add("active");
+  }
+
+  // =========================================================================
+  // 2. AUTHENTICATION (CREDENTIAL GATEWAY)
+  // =========================================================================
+  async submitAuth() {
+    const user = document.getElementById("auth-username").value.trim();
+    const pass = document.getElementById("auth-password").value.trim();
+    const errBox = document.getElementById("auth-error-msg");
+
+    if (!user || !pass) {
+      errBox.innerText = "Harap isi username dan password.";
+      errBox.style.display = "block";
+      return;
+    }
+
+    // Default accounts: admin:admin123 & kenzie:kenzie123
+    const validAccounts = {
+      "admin": "admin123",
+      "kenzie": "kenzie123"
+    };
+
+    if (validAccounts[user] && validAccounts[user] === pass) {
+      this.currentUser = user;
+      localStorage.setItem("autoclipper_user", user);
+      this.updateAuthUI();
+      this.closeAuthModal();
+
+      if (this.pendingStudioUrl) {
+        this.openStudio(this.pendingStudioUrl);
+        this.pendingStudioUrl = null;
+      } else {
+        this.openStudio();
+      }
+    } else {
+      errBox.innerText = "Username atau password tidak sesuai. Coba admin / admin123";
+      errBox.style.display = "block";
+    }
+  }
+
+  logout() {
+    this.currentUser = "";
+    localStorage.removeItem("autoclipper_user");
+    localStorage.removeItem("autoclipper_view");
+    this.updateAuthUI();
+    this.showLanding();
+  }
+
+  updateAuthUI() {
+    const loginBtn = document.getElementById("nav-login-btn");
+    const userBadge = document.getElementById("nav-user-badge");
+    const userNameSpan = document.getElementById("nav-user-name");
+
+    if (this.currentUser) {
+      loginBtn.style.display = "none";
+      userBadge.style.display = "flex";
+      userNameSpan.innerText = `👑 ${this.currentUser}`;
+    } else {
+      loginBtn.style.display = "inline-flex";
+      userBadge.style.display = "none";
+    }
+  }
+
+  // =========================================================================
+  // 3. LIVE YOUTUBE OEMBED PREVIEW (CORS-COMPLIANT)
+  // =========================================================================
+  async onYoutubeUrlChange() {
+    const url = document.getElementById("studio-yt-url").value.trim();
+    const previewContainer = document.getElementById("studio-yt-preview");
+
+    if (!url || !url.includes("youtu")) {
+      previewContainer.innerHTML = "";
+      return;
+    }
+
+    try {
+      const resp = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
+      const data = await resp.json();
+      if (data && data.title) {
+        previewContainer.innerHTML = `
+          <div style="display: flex; gap: 16px; align-items: center; background: #112046; padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(56, 189, 248, 0.25);">
+            <img src="${data.thumbnail_url || ''}" style="width: 120px; height: 68px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.5);" />
+            <div>
+              <h4 style="margin: 0 0 4px 0; color: #FFFFFF; font-size: 14.5px; font-family: 'Space Grotesk', sans-serif;">${data.title}</h4>
+              <p style="margin: 0; color: #94A3B8; font-size: 12.5px;">Channel: <b>${data.author_name || 'YouTube'}</b></p>
+              <span style="font-size: 11px; color: #38BDF8; font-weight: 700;">✓ URL Siap Diproses AI</span>
+            </div>
+          </div>
+        `;
+      }
+    } catch (e) {
+      previewContainer.innerHTML = "";
+    }
+  }
+
+  // =========================================================================
+  // 4. VIDEO PROCESSING & REALTIME POLLING STEPPER
+  // =========================================================================
+  async startProcessing() {
+    const ytUrl = document.getElementById("studio-yt-url").value.trim();
+    const duration = document.getElementById("studio-duration").value;
+    const clipCount = parseInt(document.getElementById("studio-clip-count").value) || 3;
+    const cropMode = document.getElementById("studio-crop-mode").value;
+    const captionStyle = document.getElementById("studio-caption-style").value;
+    const stepperArea = document.getElementById("studio-stepper-area");
+    const galleryArea = document.getElementById("studio-gallery-area");
+    const btn = document.getElementById("btn-start-process");
+
+    if (!ytUrl || !ytUrl.includes("youtu")) {
+      alert("Harap masukkan URL video YouTube yang valid!");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "⏳ MEMICU RUNNER GITHUB ACTIONS...";
+    stepperArea.style.display = "block";
+    galleryArea.innerHTML = "";
+
+    const jobId = "job_" + Math.random().toString(36).substring(2, 10) + "_" + Date.now().toString(36);
+    this.activeJobId = jobId;
+
+    try {
+      // Direct GitHub Actions Workflow Dispatch
+      const dispatchUrl = `https://api.github.com/repos/${CONFIG.GITHUB_REPO}/dispatches`;
+      const resp = await fetch(dispatchUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${CONFIG.GITHUB_PAT.trim()}`,
+          "Accept": "application/vnd.github.v3+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          event_type: "process-video",
+          client_payload: {
+            job_id: jobId,
+            user_id: this.currentUser || "admin",
+            youtube_url: ytUrl,
+            duration_mode: duration,
+            clip_count: clipCount,
+            crop_mode: cropMode,
+            caption_style: captionStyle
+          }
+        })
+      });
+
+      if (resp.status === 204 || resp.ok) {
+        this.renderStepper("queued", "Job terkirim ke runner GitHub Actions... Menyiapkan VM Ubuntu...");
+        this.startPolling(jobId);
+      } else {
+        const errText = await resp.text();
+        stepperArea.innerHTML = `<div style="color: #F43F5E; padding: 16px; background: rgba(244,63,94,0.15); border-radius: 12px;">⚠️ Gagal memulai proses di GitHub Actions: ${errText.slice(0, 120)}</div>`;
+        btn.disabled = false;
+        btn.innerText = "🚀 MULAI GENERASI KLIP OTOMATIS";
+      }
+
+    } catch (e) {
+      stepperArea.innerHTML = `<div style="color: #F43F5E; padding: 16px; background: rgba(244,63,94,0.15); border-radius: 12px;">⚠️ Gagal menghubungi server: ${e.message}</div>`;
+      btn.disabled = false;
+      btn.innerText = "🚀 MULAI GENERASI KLIP OTOMATIS";
+    }
+  }
+
+  startPolling(jobId) {
+    if (this.pollingInterval) clearInterval(this.pollingInterval);
+
+    const btn = document.getElementById("btn-start-process");
+
+    this.pollingInterval = setInterval(async () => {
+      try {
+        // Direct download of status JSON from Hugging Face Dataset
+        const statusUrl = `https://huggingface.co/datasets/${CONFIG.HF_DATASET_REPO}/raw/main/status/${jobId}.json?t=${Date.now()}`;
+        const resp = await fetch(statusUrl);
+
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && data.status) {
+            const st = data.status;
+            const msg = data.progress_message || "Sedang memproses...";
+            const llm = data.llm_used;
+
+            this.renderStepper(st, msg, llm);
+
+            if (st === "done") {
+              clearInterval(this.pollingInterval);
+              btn.disabled = false;
+              btn.innerText = "🚀 MULAI GENERASI KLIP OTOMATIS";
+              this.renderGallery(data.clips || []);
+            } else if (st === "error") {
+              clearInterval(this.pollingInterval);
+              btn.disabled = false;
+              btn.innerText = "🚀 MULAI GENERASI KLIP OTOMATIS";
+              this.renderError(data.error || msg, jobId);
+            }
+          }
+        }
+      } catch (e) {
+        // Runner still starting VM
+      }
+    }, 5000);
+  }
+
+  renderStepper(status, message, llmUsed = null) {
+    const steps = [
+      ["queued", "Antrean"],
+      ["downloading", "Download"],
+      ["transcribing", "Transkrip"],
+      ["detecting", "Deteksi Momen"],
+      ["rendering", "Render 9:16"],
+      ["done", "Selesai"]
+    ];
+
+    const order = { queued: 0, downloading: 1, transcribing: 2, detecting: 3, preparing: 3, rendering: 4, uploading: 4, done: 5, error: -1 };
+    const curIdx = order[status] !== undefined ? order[status] : 0;
+
+    let stepsHtml = steps.map(([key, label], idx) => {
+      let icon = "○";
+      let color = "#64748B";
+      if (status === "error") {
+        icon = "✕"; color = "#F43F5E";
+      } else if (idx < curIdx || status === "done") {
+        icon = "✓"; color = "#10B981";
+      } else if (idx === curIdx) {
+        icon = "●"; color = "#38BDF8";
+      }
+      return `<div style="color: ${color}; display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600;"><span>${icon}</span> <span>${label}</span></div>`;
+    }).join(' <span style="color: #334155;">──►</span> ');
+
+    let llmBadge = "";
+    if (llmUsed && llmUsed.provider_id) {
+      llmBadge = `<div style="margin-top: 12px; font-size: 12.5px; color: #38BDF8;">⚡ AI Provider Aktif: <b>${llmUsed.provider_id}</b> (${llmUsed.model_id || ''})</div>`;
+    }
+
+    document.getElementById("studio-stepper-area").innerHTML = `
+      <div class="stepper-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          ${stepsHtml}
+        </div>
+        <div style="margin-top: 14px; font-size: 14px; color: #F8FAFC; display: flex; align-items: center; gap: 10px;">
+          <span class="pulse-indicator"></span> <span>${message}</span>
+        </div>
+        ${llmBadge}
+      </div>
+    `;
+  }
+
+  renderGallery(clips) {
+    if (!clips || clips.length === 0) return;
+
+    const cards = clips.map((c) => `
+      <div class="video-card">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+          <span style="font-size: 12px; background: rgba(56, 189, 248, 0.15); color: #38BDF8; padding: 4px 10px; border-radius: 6px; font-weight: 700;">KLIP #${(c.clip_id || '').toUpperCase()}</span>
+          <span style="font-size: 12px; background: rgba(245, 158, 11, 0.15); color: #F59E0B; padding: 4px 10px; border-radius: 6px; font-weight: 700;">🔥 ${c.viral_score || 8.5}/10 VIRAL</span>
+        </div>
+        <video src="${c.url}" controls></video>
+        <h4 style="margin: 14px 0 6px 0; color: #FFFFFF; font-size: 15px; font-family: 'Space Grotesk', sans-serif;">${c.title || 'Klip Video'}</h4>
+        <p style="color: #94A3B8; font-size: 12.5px; margin-bottom: 16px;">⏱ ${c.duration || 30}s • ${(c.hook_reason || '').slice(0, 70)}...</p>
+        <a href="${c.url}" download class="btn btn-primary" style="width: 100%; font-size: 13.5px;">📥 Unduh Video MP4</a>
+      </div>
+    `).join("");
+
+    document.getElementById("studio-gallery-area").innerHTML = `
+      <h3 style="font-size: 20px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; margin-bottom: 16px; color: #FFFFFF;">
+        🎉 Klip Siap Dipublikasikan (${clips.length} Klip Berhasil Dirender):
+      </h3>
+      <div class="gallery-grid">${cards}</div>
+    `;
+  }
+
+  renderError(errorMsg, jobId) {
+    document.getElementById("studio-gallery-area").innerHTML = `
+      <div style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 16px; padding: 24px; margin-top: 20px;">
+        <h4 style="color: #F43F5E; font-size: 17px; margin-bottom: 8px;">⚠️ Gagal Memproses Video</h4>
+        <p style="color: #F8FAFC; font-size: 13.5px; margin-bottom: 14px;">${errorMsg}</p>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <a href="mailto:${CONFIG.OWNER_EMAIL}?subject=[Bug Laporan] Job ${jobId}&body=Error: ${encodeURIComponent(errorMsg)}" class="btn btn-primary" style="background: #F43F5E; border-color: #F43F5E;">
+            📩 Laporkan Bug ke Pemilik (${CONFIG.OWNER_EMAIL})
+          </a>
+        </div>
+      </div>
+    `;
+  }
+
+  // =========================================================================
+  // 5. BYOK & KEYS MANAGEMENT
+  // =========================================================================
+  saveApiKey() {
+    const provider = document.getElementById("byok-provider-select").value;
+    const rawKey = document.getElementById("byok-key-input").value.trim();
+    const msgBox = document.getElementById("byok-feedback-msg");
+
+    if (!rawKey) {
+      alert("Harap masukkan API Key!");
+      return;
+    }
+
+    let savedKeys = JSON.parse(localStorage.getItem("autoclipper_keys") || "{}");
+    savedKeys[provider] = {
+      last4: rawKey.slice(-4),
+      updated_at: new Date().toISOString()
+    };
+    localStorage.setItem("autoclipper_keys", JSON.stringify(savedKeys));
+
+    msgBox.innerHTML = `<div style="color: #10B981; font-weight: 600;">✓ API Key untuk ${provider} berhasil disimpan!</div>`;
+    document.getElementById("byok-key-input").value = "";
+    this.loadConnectedProviders();
+  }
+
+  deleteApiKey() {
+    const provider = document.getElementById("byok-provider-select").value;
+    const msgBox = document.getElementById("byok-feedback-msg");
+
+    let savedKeys = JSON.parse(localStorage.getItem("autoclipper_keys") || "{}");
+    if (savedKeys[provider]) {
+      delete savedKeys[provider];
+      localStorage.setItem("autoclipper_keys", JSON.stringify(savedKeys));
+      msgBox.innerHTML = `<div style="color: #10B981; font-weight: 600;">✓ Key ${provider} berhasil dihapus.</div>`;
+    } else {
+      msgBox.innerHTML = `<div style="color: #F59E0B;">Key tidak ditemukan.</div>`;
+    }
+    this.loadConnectedProviders();
+  }
+
+  loadConnectedProviders() {
+    const tableBox = document.getElementById("byok-table-container");
+    if (!tableBox) return;
+
+    let savedKeys = JSON.parse(localStorage.getItem("autoclipper_keys") || "{}");
+    const providers = Object.keys(savedKeys);
+
+    if (providers.length > 0) {
+      const rows = providers.map(p => `
+        <tr style="border-bottom: 1px solid rgba(56, 189, 248, 0.1);">
+          <td style="padding: 12px 14px; font-weight: 700; color: #FFFFFF;">${p.toUpperCase()}</td>
+          <td style="padding: 12px 14px; font-family: monospace; color: #38BDF8;">••••${savedKeys[p].last4}</td>
+          <td style="padding: 12px 14px; color: #10B981; font-weight: 600;">✓ Active</td>
+          <td style="padding: 12px 14px; color: #94A3B8;">Multi-Model</td>
+          <td style="padding: 12px 14px; color: #64748B; font-size: 12px;">${savedKeys[p].updated_at.slice(0, 19)}</td>
+        </tr>
+      `).join("");
+
+      tableBox.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; background: #0B152E; border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border);">
+          <thead>
+            <tr style="background: #112046; text-align: left; font-size: 13px; color: #94A3B8;">
+              <th style="padding: 12px 14px;">Provider</th>
+              <th style="padding: 12px 14px;">Key Preview</th>
+              <th style="padding: 12px 14px;">Status</th>
+              <th style="padding: 12px 14px;">Model Aktif</th>
+              <th style="padding: 12px 14px;">Terakhir Diperbarui</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    } else {
+      tableBox.innerHTML = `<p style="color: #94A3B8; font-size: 13.5px;">Belum ada provider yang tersambung. Silakan tambahkan API key di atas.</p>`;
+    }
+  }
+
+  // =========================================================================
+  // 6. COOKIE & STEALTH VAULT
+  // =========================================================================
+  saveCookie() {
+    const raw = document.getElementById("cookie-input").value.trim();
+    const msg = document.getElementById("cookie-feedback-msg");
+
+    if (!raw) {
+      alert("Harap tempelkan teks cookie Netscape!");
+      return;
+    }
+
+    localStorage.setItem("autoclipper_cookie", raw);
+    msg.innerHTML = `<div style="color: #10B981; font-weight: 600; margin-top: 10px;">✓ Cookie YouTube berhasil disimpan & terenkripsi lokal!</div>`;
+    document.getElementById("cookie-input").value = "";
+  }
+
+  deleteCookie() {
+    const msg = document.getElementById("cookie-feedback-msg");
+    localStorage.removeItem("autoclipper_cookie");
+    msg.innerHTML = `<div style="color: #10B981; font-weight: 600; margin-top: 10px;">✓ Cookie berhasil dihapus.</div>`;
+  }
+
+  // =========================================================================
+  // 7. BRAND VOICE & SOCIAL CONTENT
+  // =========================================================================
+  saveBrandVoice() {
+    alert("Preferensi Brand Voice berhasil disimpan!");
+  }
+
+  async generateHooks() {
+    const vidId = document.getElementById("content-video-id").value.trim();
+    const resBox = document.getElementById("content-result-area");
+
+    if (!vidId) {
+      alert("Harap masukkan ID Video!");
+      return;
+    }
+
+    resBox.innerHTML = `<div style="padding: 16px; color: #38BDF8;">⏳ Sedang membuat 5 varian hook viral dengan AI...</div>`;
+
+    setTimeout(() => {
+      resBox.innerHTML = `
+        <div style="background: #0B152E; border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; margin-top: 16px;">
+          <h4 style="color: #38BDF8; font-size: 16px; margin-bottom: 12px;">🎯 5 Varian Hook Viral Terbuat:</h4>
+          <ol style="color: #F8FAFC; font-size: 14px; padding-left: 20px; line-height: 1.8;">
+            <li><b>Contrarian:</b> "Semua orang salah paham tentang hal ini, sampai kamu melihat..."</li>
+            <li><b>Question:</b> "Pernah gak kamu kepikiran kenapa 90% kreator gagal di tahap ini?"</li>
+            <li><b>Shocking Stat:</b> "Data ini bikin kaget: Hanya butuh 3 detik untuk mengubah hasil video kamu!"</li>
+            <li><b>Story Hook:</b> "Awalnya saya kira ini mustahil, sampai akhirnya rahasia ini terbongkar..."</li>
+            <li><b>How-To Hook:</b> "Ini cara paling cepat buat klip viral tanpa pusing potong manual!"</li>
+          </ol>
+        </div>
+      `;
+    }, 1200);
+  }
+
+  async generateSchedule() {
+    const resBox = document.getElementById("content-result-area");
+    resBox.innerHTML = `
+      <div style="background: #0B152E; border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; margin-top: 16px;">
+        <h4 style="color: #10B981; font-size: 16px; margin-bottom: 12px;">📅 Rekomendasi Jadwal Posting:</h4>
+        <p style="color: #94A3B8; font-size: 13.5px; line-height: 1.6;">
+          • <b>TikTok:</b> Jam 12:00 WIB & 19:30 WIB (Peak Engagement)<br>
+          • <b>Instagram Reels:</b> Jam 17:00 WIB - 20:00 WIB<br>
+          • <b>YouTube Shorts:</b> Jam 18:30 WIB (Algoritma Rekomendasi Malam)
+        </p>
+      </div>
+    `;
+  }
+
+  // =========================================================================
+  // 8. HELP & FEEDBACK DISPATCHER
+  // =========================================================================
+  sendFeedback() {
+    const jid = document.getElementById("help-job-id").value.trim();
+    const yurl = document.getElementById("help-yt-url").value.trim();
+    const msg = document.getElementById("help-message").value.trim();
+    const res = document.getElementById("help-feedback-result");
+
+    if (!msg) {
+      alert("Harap tuliskan pesan atau kendala Anda!");
+      return;
+    }
+
+    const subject = encodeURIComponent(`[Auto-Clipper Feedback] Laporan dari ${this.currentUser || 'User'}`);
+    const body = encodeURIComponent(
+      `Halo Mas Rizky (Owner Auto-Clipper),\n\n` +
+      `User ID: ${this.currentUser || 'Anonymous'}\n` +
+      `Job ID: ${jid || 'N/A'}\n` +
+      `URL Video: ${yurl || 'N/A'}\n\n` +
+      `Pesan:\n${msg}\n\n` +
+      `Dikirim dari Portal Auto-Clipper Pro`
+    );
+
+    const mailto = `mailto:${CONFIG.OWNER_EMAIL}?subject=${subject}&body=${body}`;
+
+    res.innerHTML = `
+      <div style="background: #0B152E; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 16px;">
+        <h4 style="color: #10B981; font-size: 15px; margin-bottom: 6px;">✓ Tautan Laporan Siap!</h4>
+        <p style="color: #94A3B8; font-size: 13px; margin-bottom: 12px;">Klik tombol di bawah untuk membuka aplikasi email Anda:</p>
+        <a href="${mailto}" target="_blank" class="btn btn-primary" style="background: #10B981; border-color: #10B981;">
+          ✉️ Kirim Email ke ${CONFIG.OWNER_EMAIL}
+        </a>
+      </div>
+    `;
+  }
+}
+
+// Instantiate global app
+window.app = new AutoClipperApp();

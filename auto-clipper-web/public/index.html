@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auto-Clipper Pro — AI Video Repurposing Platform | Buat Shorts & Reels Otomatis</title>
+  <meta name="description" content="Platform AI Auto-Clipper tercanggih: Ubah 1 video panjang YouTube jadi puluhan klip 9:16 viral siap posting dalam hitungan menit tanpa watermark." />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ========================================================================
+       1. STICKY NAVBAR
+       ======================================================================== -->
+  <div class="navbar-wrapper">
+    <nav class="navbar">
+      <div class="brand" onclick="app.showLanding()">
+        <div class="brand-icon">⚡</div>
+        <div>
+          <div class="brand-text">AUTO-CLIPPER <span>PRO</span></div>
+          <div class="brand-subtitle">AI Video Repurposing Platform v2.1</div>
+        </div>
+      </div>
+
+      <div class="nav-links">
+        <a class="nav-link" href="#features">Fitur Utama</a>
+        <a class="nav-link" href="#how-it-works">Cara Kerja</a>
+        <a class="nav-link" href="#trust-center">Keamanan Cookie</a>
+        <a class="nav-link" href="#faq">FAQ</a>
+      </div>
+
+      <div class="nav-actions">
+        <button id="nav-login-btn" class="btn btn-secondary" onclick="app.openAuthModal()">👤 Masuk Admin</button>
+        <button id="nav-studio-btn" class="btn btn-primary" onclick="app.openStudio()">🚀 Buka Studio AI</button>
+        <div id="nav-user-badge" style="display: none; align-items: center; gap: 8px;">
+          <span style="font-size: 12px; background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 5px 12px; border-radius: 20px; font-weight: 700;">🟢 Ready</span>
+          <span id="nav-user-name" style="font-size: 13px; color: #38BDF8; font-weight: 700;">👤 admin</span>
+          <button class="btn btn-logout" onclick="app.logout()">Keluar</button>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ========================================================================
+       2. VIEW 1: PUBLIC HIGH-CONVERTING LANDING PAGE
+       ======================================================================== -->
+  <main id="view-landing" class="container">
+    
+    <!-- HERO BANNER -->
+    <section class="hero">
+      <div class="hero-badge">
+        <span>✨ LOKACLIP-INSPIRED v2.1</span> • <span>10+ AI LLM PROVIDERS</span> • <span>4-TIER STEALTH</span>
+      </div>
+      <h1 class="hero-title">Ubah 1 Video Panjang Jadi Puluhan Klip Viral Siap Posting</h1>
+      <p class="hero-subtitle">
+        AI Auto-Clipper platform berstandar broadcast: Kurasi momen viral otomatis, transkripsi kata-demi-kata presisi (Word Snapping), dan render vertikal 9:16 dengan subtitle animasi kinetik dinamis.
+      </p>
+
+      <div class="hero-cta-group">
+        <button class="btn btn-primary" style="font-size: 16px; padding: 15px 32px;" onclick="app.openStudio()">
+          🚀 MASUK KE STUDIO AI (GRATIS)
+        </button>
+        <a class="btn btn-secondary" href="#trust-center" style="font-size: 15px; padding: 15px 28px;">
+          🛡️ Pelajari Keamanan Cookie
+        </a>
+      </div>
+
+      <!-- HERO VIDEO SHOWCASE MOCKUP (BEFORE / AFTER) -->
+      <div class="showcase-wrapper">
+        <div class="showcase-grid">
+          
+          <div class="showcase-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 11px; background: rgba(148, 163, 184, 0.15); color: #94A3B8; padding: 4px 10px; border-radius: 6px; font-weight: 700;">BEFORE (16:9 RAW)</span>
+              <span style="font-size: 12px; color: #64748B;">45:00 Menit Full Video</span>
+            </div>
+            <div class="video-mockup-16-9">
+              <div style="text-align: center;">
+                <span style="font-size: 36px;">📺</span>
+                <div style="font-size: 13px; color: #94A3B8; margin-top: 6px;">Video Horizontal Mentah</div>
+              </div>
+            </div>
+            <p style="font-size: 12.5px; color: #64748B;">Butuh berjam-jam potong & timing manual</p>
+          </div>
+
+          <div class="showcase-card after">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 11px; background: rgba(56, 189, 248, 0.2); color: #38BDF8; padding: 4px 10px; border-radius: 6px; font-weight: 700;">AFTER (9:16 SHORTS VIRAL)</span>
+              <span style="font-size: 12px; color: #F59E0B; font-weight: 700;">🔥 9.2/10 VIRAL SCORE</span>
+            </div>
+            <div class="video-mockup-9-16">
+              <div style="text-align: center; padding: 16px;">
+                <span style="font-size: 15px; font-weight: 800; color: #FDE047; font-family: 'Space Grotesk', sans-serif; background: rgba(0,0,0,0.65); padding: 6px 14px; border-radius: 8px;">"RAHASIA BESAR INI..."</span>
+                <div style="font-size: 11.5px; color: #38BDF8; margin-top: 8px; font-weight: 600;">✨ Subtitle Kinetik Dinamis + Blurred Stack</div>
+              </div>
+            </div>
+            <p style="font-size: 12.5px; color: #10B981; font-weight: 600;">✓ Selesai Otomatis dalam 3 Menit</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS COUNTER -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number" style="color: #38BDF8;">100%</div>
+        <div class="stat-label">Zero-Cost Cloud Architecture</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" style="color: #10B981;">10+</div>
+        <div class="stat-label">AI Provider Terintegrasi</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" style="color: #F59E0B;">0.2s</div>
+        <div class="stat-label">Word-Boundary Snapping</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" style="color: #EC4899;">256-bit</div>
+        <div class="stat-label">Enkripsi Militer (Fernet)</div>
+      </div>
+    </section>
+
+    <!-- SECTION: CARA KERJA (4 LANGKAH MUDAH) -->
+    <section id="how-it-works" style="padding: 40px 0;">
+      <div class="section-header">
+        <h2 class="section-title">⚡ Bagaimana Cara Kerjanya?</h2>
+        <p class="section-subtitle">Dari video YouTube panjang hingga klip vertikal siap posting hanya dalam 4 langkah mudah.</p>
+      </div>
+
+      <div class="step-grid">
+        <div class="step-card">
+          <div class="step-badge">1</div>
+          <h4 style="color: #FFFFFF; font-size: 17px; margin-bottom: 8px;">Tempel Link YouTube</h4>
+          <p style="color: #94A3B8; font-size: 13.5px; line-height: 1.5;">Masukkan link podcast atau video apa saja. 4-Tier Stealth Downloader mengunduh secara mulus.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-badge">2</div>
+          <h4 style="color: #FFFFFF; font-size: 17px; margin-bottom: 8px;">AI Deteksi Momen</h4>
+          <p style="color: #94A3B8; font-size: 13.5px; line-height: 1.5;">Groq Whisper mentranskrip suara dan LLM Router mencari momen paling bernilai viral tinggi.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-badge">3</div>
+          <h4 style="color: #FFFFFF; font-size: 17px; margin-bottom: 8px;">Render Remotion 9:16</h4>
+          <p style="color: #94A3B8; font-size: 13.5px; line-height: 1.5;">Video diframe vertikal dengan latar blurred stack dan subtitle kinetik pop-in bergaya MrBeast.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-badge">4</div>
+          <h4 style="color: #FFFFFF; font-size: 17px; margin-bottom: 8px;">Unduh & Publikasi</h4>
+          <p style="color: #94A3B8; font-size: 13.5px; line-height: 1.5;">Unduh video MP4 berkualitas tinggi dan gunakan varian hook untuk caption media sosial Anda.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: FITUR UTAMA -->
+    <section id="features" style="padding: 40px 0;">
+      <div class="section-header">
+        <h2 class="section-title">💎 Fitur Lengkap Berstandar Enterprise</h2>
+        <p class="section-subtitle">Dibangun untuk kreator konten, podcaster, media agency, dan affiliate marketer.</p>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon-box">🛡️</div>
+          <h3 style="color: #FFFFFF; font-size: 18px; margin-bottom: 10px;">4-Tier Stealth Downloader</h3>
+          <p style="color: #94A3B8; font-size: 14px; line-height: 1.5;">Bypass YouTube bot check & video 18+ secara otomatis menggunakan iOS/Android client spoofing, PO-token generator, dan CloakBrowser session engine.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box">⚡</div>
+          <h3 style="color: #FFFFFF; font-size: 18px; margin-bottom: 10px;">Groq Whisper + Word Snapping</h3>
+          <p style="color: #94A3B8; font-size: 14px; line-height: 1.5;">Transkripsi audio ultra-cepat dengan audio downsampling 32kbps dan padding batas kata 0.2 detik agar pemotongan kalimat tidak terputus secara kasar.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box">🎨</div>
+          <h3 style="color: #FFFFFF; font-size: 18px; margin-bottom: 10px;">Remotion 9:16 Kinetic Studio</h3>
+          <p style="color: #94A3B8; font-size: 14px; line-height: 1.5;">Rendering video vertikal 9:16 berbasis React Remotion: Subtitle animasi pop spring, dynamic blurred background stack, dan speech-aware audio ducking.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box">🔑</div>
+          <h3 style="color: #FFFFFF; font-size: 18px; margin-bottom: 10px;">BYOK Multi-Cloud Engine</h3>
+          <p style="color: #94A3B8; font-size: 14px; line-height: 1.5;">Gunakan API Key gratis Anda sendiri (Groq, Gemini, OpenRouter, Mistral, Cerebras, NVIDIA NIM, dll). Sistem otomatis merotasi model jika kuota habis.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box">🔒</div>
+          <h3 style="color: #FFFFFF; font-size: 18px; margin-bottom: 10px;">Brankas Kunci Terenkripsi AES-128</h3>
+          <p style="color: #94A3B8; font-size: 14px; line-height: 1.5;">Seluruh API key dan cookie disimpan terenkripsi di dataset privat Hugging Face. Tidak ada pihak lain yang bisa melihat atau membaca kunci Anda.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box">✍️</div>
+          <h3 style="color: #FFFFFF; font-size: 18px; margin-bottom: 10px;">Brand Voice & Social Matrix</h3>
+          <p style="color: #94A3B8; font-size: 14px; line-height: 1.5;">Hasilkan otomatis 5 sudut pandang hook viral (Contrarian, Question, Shocking, Story, How-to) dan susun jadwal draft posting ke TikTok, Reels, dan Shorts.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: TRUST & COOKIE SECURITY CENTER -->
+    <section id="trust-center" class="trust-container">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; margin-bottom: 24px;">
+        <div>
+          <span style="font-size: 12px; background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 5px 14px; border-radius: 20px; font-weight: 700;">🛡️ PUSAT KEAMANAN & KEPERCAYAAN PENGGUNA</span>
+          <h2 style="font-size: 26px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; color: #FFFFFF; margin: 12px 0 6px 0;">Mengapa Fitur Cookie Ada & Apakah Akun Saya Aman?</h2>
+          <p style="color: #94A3B8; font-size: 14.5px;">Penjelasan transparan mengenai cara kerja sistem keamanan Auto-Clipper.</p>
+        </div>
+        <a class="bookmarklet-btn" href="javascript:(function(){var c=document.cookie;if(!c||c.indexOf('VISITOR_INFO')===-1&&c.indexOf('SID')===-1){alert('Harap buka halaman https://youtube.com sebelum klik tombol ini!');return;}var l=['# Netscape HTTP Cookie File','# https://curl.haxx.se/rfc/cookie_spec.html',''];c.split(';').forEach(function(p){var pt=p.trim().split('=');if(pt.length>=2){l.push('.youtube.com\tTRUE\t/\tTRUE\t'+(Math.floor(Date.now()/1000)+86400*30)+'\t'+pt[0]+'\t'+pt.slice(1).join('='));}});var o=l.join('\n');navigator.clipboard.writeText(o).then(function(){alert('Cookie YouTube tersalin ke clipboard! Silakan paste di Tab Pengaturan.');}).catch(function(){prompt('Salin teks cookie:',o);});})();">
+          🪄 Tarik Bookmarklet Ini ke Bookmark Bar
+        </a>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 24px;">
+        <div style="background: rgba(11, 21, 46, 0.75); border: 1px solid rgba(56, 189, 248, 0.15); border-radius: 16px; padding: 22px;">
+          <h4 style="color: #38BDF8; font-size: 16px; margin-bottom: 8px;">1. Kenapa Cookie Dibutuhkan?</h4>
+          <p style="color: #F8FAFC; font-size: 13.5px; line-height: 1.5;">YouTube sering membatasi video tertentu (konten edukasi 18+, verifikasi bot cloud). Cookie sesi membantu runner membaca video stream seperti layaknya browser normal Anda.</p>
+        </div>
+
+        <div style="background: rgba(11, 21, 46, 0.75); border: 1px solid rgba(56, 189, 248, 0.15); border-radius: 16px; padding: 22px;">
+          <h4 style="color: #10B981; font-size: 16px; margin-bottom: 8px;">2. Apakah Password Saya Aman?</h4>
+          <p style="color: #F8FAFC; font-size: 13.5px; line-height: 1.5;"><b>100% SANGAT AMAN.</b> Cookie hanya berisi token sesi web, <b>TIDAK PERNAH</b> berisi password atau email Anda. Sistem tidak memiliki akses ke akun Google Anda.</p>
+        </div>
+
+        <div style="background: rgba(11, 21, 46, 0.75); border: 1px solid rgba(56, 189, 248, 0.15); border-radius: 16px; padding: 22px;">
+          <h4 style="color: #F59E0B; font-size: 16px; margin-bottom: 8px;">3. Enkripsi Brankas Privat</h4>
+          <p style="color: #F8FAFC; font-size: 13.5px; line-height: 1.5;">Setiap cookie dan API key yang Anda simpan langsung dienkripsi menggunakan <b>Fernet AES-128</b> dan disimpan di dataset privat khusus Anda.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: FAQ ACCORDION -->
+    <section id="faq" style="padding: 40px 0;">
+      <div class="section-header">
+        <h2 class="section-title">Pertanyaan yang Sering Diajukan (FAQ)</h2>
+      </div>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-question">❓ Apakah sistem ini benar-benar gratis tanpa biaya bulanan?</div>
+          <div class="faq-answer">Ya! Auto-Clipper memanfaatkan kombinasi arsitektur cloud serverless gratis (GitHub Actions Runner 16GB RAM + Hugging Face Spaces + API Key gratis dari Groq, Gemini, OpenRouter, dll).</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">❓ Mengapa video yang dihasilkan tidak terpotong bicaranya secara kasar?</div>
+          <div class="faq-answer">Sistem menggunakan teknologi <i>Word-Boundary Snapping</i> dengan bantalan audio 0.2 detik pada setiap transkrip kata, sehingga kalimat awal dan akhir klip selalu utuh dan natural.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">❓ Ke mana saya dapat melaporkan bug atau meminta bantuan?</div>
+          <div class="faq-answer">Anda dapat langsung menghubungi pemilik platform di <b><a href="mailto:srizkyjati@gmail.com" style="color: #38BDF8;">srizkyjati@gmail.com</a></b> atau melalui Tab Bantuan di dalam Studio.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div>Auto-Clipper Pro v2.1 Enterprise • Zero-Cost Cloud Architecture</div>
+      <div style="margin-top: 8px;">Dikelola oleh Pemilik: <a href="mailto:srizkyjati@gmail.com">srizkyjati@gmail.com</a></div>
+    </footer>
+
+  </main>
+
+  <!-- ========================================================================
+       3. VIEW 2: FULL STUDIO AI WORKSPACE (DEDICATED PANEL)
+       ======================================================================== -->
+  <section id="view-studio" class="container studio-container" style="display: none;">
+    
+    <!-- Studio Header -->
+    <div class="studio-header">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <span style="font-size: 28px;">🎬</span>
+        <div>
+          <h2 style="font-size: 20px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; color: #FFFFFF;">STUDIO WORKSPACE AI</h2>
+          <p style="font-size: 13px; color: #94A3B8;">Panel Kerja Pemrosesan Video, Konfigurasi AI & Distribusi Medsos</p>
+        </div>
+      </div>
+      <button class="btn btn-secondary" onclick="app.showLanding()">← Kembali ke Beranda</button>
+    </div>
+
+    <!-- Studio Tab Navigation -->
+    <div class="studio-tabs">
+      <button class="studio-tab-btn active" onclick="app.switchStudioTab('tab-video')">🎬 Studio Video 9:16</button>
+      <button class="studio-tab-btn" onclick="app.switchStudioTab('tab-byok')">⚙️ BYOK Multi-Cloud Engine</button>
+      <button class="studio-tab-btn" onclick="app.switchStudioTab('tab-cookie')">🛡️ Cookie & Anti-Bot Vault</button>
+      <button class="studio-tab-btn" onclick="app.switchStudioTab('tab-brand')">✍️ Brand Voice & Konten</button>
+      <button class="studio-tab-btn" onclick="app.switchStudioTab('tab-help')">💬 Pusat Bantuan & Lapor Bug</button>
+    </div>
+
+    <!-- STUDIO TAB 1: 🎬 GENERATOR VIDEO -->
+    <div id="tab-video" class="studio-tab-content">
+      <div class="form-group">
+        <label class="form-label">🔗 Tempel Link Video YouTube:</label>
+        <input type="text" id="studio-yt-url" class="form-control" placeholder="https://www.youtube.com/watch?v=... atau https://youtu.be/..." oninput="app.onYoutubeUrlChange()" />
+        <div id="studio-yt-preview" style="margin-top: 12px;"></div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+        <div class="form-group">
+          <label class="form-label">Target Durasi Klip:</label>
+          <select id="studio-duration" class="form-control">
+            <option value="standard_30_60" selected>30 - 60 Detik (Standar Shorts / Reels)</option>
+            <option value="fast_under_30">&lt; 30 Detik (Fast-Paced Hook)</option>
+            <option value="long_60_90">60 - 90 Detik (Deep Narrative)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Jumlah Klip yang Diinginkan (1 - 5):</label>
+          <input type="number" id="studio-clip-count" class="form-control" min="1" max="5" value="3" />
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+        <div class="form-group">
+          <label class="form-label">Mode Framing (Aspect Ratio 9:16):</label>
+          <select id="studio-crop-mode" class="form-control">
+            <option value="blurred_stack" selected>Blurred Stack 9:16 (Rekomendasi - Anti Muka Terpotong)</option>
+            <option value="center_crop">Center Crop 9:16 (Full Screen Fill)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gaya Subtitle Kinetik Remotion:</label>
+          <select id="studio-caption-style" class="form-control">
+            <option value="bold_yellow" selected>🟡 Bold Yellow (MrBeast Style)</option>
+            <option value="clean_white">⚪ Clean Minimalist White</option>
+            <option value="neon_cyan">⚡ Neon Cyan Glow</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="btn-start-process" class="btn btn-primary" style="width: 100%; font-size: 16px; padding: 15px;" onclick="app.startProcessing()">
+        🚀 MULAI GENERASI KLIP OTOMATIS
+      </button>
+
+      <!-- Stepper Status Tracker Area -->
+      <div id="studio-stepper-area" style="display: none; margin-top: 24px;"></div>
+
+      <!-- Results Gallery Area -->
+      <div id="studio-gallery-area" style="margin-top: 32px;"></div>
+    </div>
+
+    <!-- STUDIO TAB 2: ⚙️ BYOK MULTI-CLOUD HUB -->
+    <div id="tab-byok" class="studio-tab-content" style="display: none;">
+      <h3 style="font-size: 18px; margin-bottom: 8px;">🔑 Sambungkan API Key Provider AI (BYOK Hub)</h3>
+      <p style="color: #94A3B8; font-size: 13.5px; margin-bottom: 20px;">Sistem merotasi otomatis seluruh model AI yang Anda miliki berdasarkan kecepatan, tier gratis, dan kuota aktif.</p>
+
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px;">
+        <select id="byok-provider-select" class="form-control">
+          <option value="groq">⚡ Groq (Llama 3.3 70B & Whisper)</option>
+          <option value="gemini">✨ Google Gemini (Flash 2.0 / 1.5)</option>
+          <option value="openrouter">🌐 OpenRouter (Free DeepSeek & Qwen)</option>
+          <option value="mistral">🌪️ Mistral AI (Mistral Small / Nemo)</option>
+          <option value="cerebras">🧠 Cerebras (Ultra-Fast Llama 3.3)</option>
+          <option value="github_models">🐙 GitHub Models (GPT-4o mini)</option>
+          <option value="nvidia_nim">🟢 NVIDIA NIM (Llama 3.3 / Nemotron)</option>
+          <option value="cohere">🎯 Cohere (Command R+)</option>
+          <option value="huggingface">🤗 Hugging Face (Inference API)</option>
+          <option value="cloudflare">☁️ Cloudflare Workers AI</option>
+        </select>
+        <input type="password" id="byok-key-input" class="form-control" placeholder="Masukkan API Key Anda..." />
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+        <button class="btn btn-primary" onclick="app.saveApiKey()">💾 Simpan & Validasi Key</button>
+        <button class="btn btn-secondary" onclick="app.deleteApiKey()">🗑️ Hapus Key Terpilih</button>
+      </div>
+
+      <div id="byok-feedback-msg" style="margin-bottom: 16px;"></div>
+
+      <h4 style="font-size: 16px; margin-bottom: 12px;">📋 Provider Tersambung & Model Aktif di Akun Anda</h4>
+      <div id="byok-table-container"></div>
+    </div>
+
+    <!-- STUDIO TAB 3: 🛡️ COOKIE & STEALTH VAULT -->
+    <div id="tab-cookie" class="studio-tab-content" style="display: none;">
+      <h3 style="font-size: 18px; margin-bottom: 8px;">🛡️ Bypass YouTube Anti-Bot & Video 18+ (BYOC Vault)</h3>
+      <div style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 20px; margin-bottom: 20px;">
+        <h4 style="color: #38BDF8; font-size: 15px; margin-bottom: 6px;">ℹ️ Cara 1-Klik Salin Cookie YouTube Instan:</h4>
+        <p style="color: #F8FAFC; font-size: 13.5px; margin-bottom: 14px;">
+          Tarik tombol di bawah ke Bookmark Bar browser Anda ➔ Buka tab video YouTube ➔ Klik tombol bookmark ➔ Paste cookie di kolom bawah.
+        </p>
+        <a class="bookmarklet-btn" href="javascript:(function(){var c=document.cookie;if(!c||c.indexOf('VISITOR_INFO')===-1&&c.indexOf('SID')===-1){alert('Harap buka halaman https://youtube.com sebelum klik tombol ini!');return;}var l=['# Netscape HTTP Cookie File','# https://curl.haxx.se/rfc/cookie_spec.html',''];c.split(';').forEach(function(p){var pt=p.trim().split('=');if(pt.length>=2){l.push('.youtube.com\tTRUE\t/\tTRUE\t'+(Math.floor(Date.now()/1000)+86400*30)+'\t'+pt[0]+'\t'+pt.slice(1).join('='));}});var o=l.join('\n');navigator.clipboard.writeText(o).then(function(){alert('Cookie YouTube tersalin ke clipboard! Silakan paste di Tab Pengaturan.');}).catch(function(){prompt('Salin teks cookie:',o);});})();">
+          🪄 Tarik Bookmarklet Ini ke Bookmark Bar
+        </a>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tempel Teks Cookie Netscape di Sini:</label>
+        <textarea id="cookie-input" class="form-control" rows="4" placeholder="# Netscape HTTP Cookie File..."></textarea>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <button class="btn btn-primary" onclick="app.saveCookie()">💾 Simpan Cookie Terenkripsi</button>
+        <button class="btn btn-secondary" onclick="app.deleteCookie()">🗑️ Hapus Cookie</button>
+      </div>
+
+      <div id="cookie-feedback-msg"></div>
+    </div>
+
+    <!-- STUDIO TAB 4: ✍️ BRAND VOICE & KONTEN -->
+    <div id="tab-brand" class="studio-tab-content" style="display: none;">
+      <h3 style="font-size: 18px; margin-bottom: 8px;">🎭 Brand Voice & Personalisasi Konten</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <input type="text" id="brand-niche" class="form-control" placeholder="Niche (Edukasi Finansial / Bisnis / Teknologi)" />
+        <input type="text" id="brand-tone" class="form-control" placeholder="Tone of Voice (Santai, to the point, mendidik)" />
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+        <input type="text" id="brand-dos" class="form-control" placeholder="Do's (Contoh: Cantumkan data konkret, analogi mudah)" />
+        <input type="text" id="brand-donts" class="form-control" placeholder="Don'ts (Contoh: Clickbait palsu, bahasa kaku)" />
+      </div>
+      <button class="btn btn-primary" style="margin-bottom: 32px;" onclick="app.saveBrandVoice()">💾 Simpan Preferensi Brand Voice</button>
+
+      <hr style="border-color: rgba(56, 189, 248, 0.15); margin-bottom: 28px;" />
+
+      <h3 style="font-size: 18px; margin-bottom: 8px;">🚀 Generator Distribusi Media Sosial Multi-Format</h3>
+      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+        <input type="text" id="content-video-id" class="form-control" placeholder="ID Video yang Diproses (contoh: job123)" />
+        <button class="btn btn-primary" onclick="app.generateHooks()">🎯 Buat 5 Varian Hook</button>
+        <button class="btn btn-secondary" onclick="app.generateSchedule()">📅 Jadwal Posting</button>
+      </div>
+
+      <div id="content-result-area"></div>
+    </div>
+
+    <!-- STUDIO TAB 5: 💬 PUSAT BANTUAN & LAPOR BUG -->
+    <div id="tab-help" class="studio-tab-content" style="display: none;">
+      <h3 style="font-size: 18px; margin-bottom: 8px;">📩 Hubungi Pemilik Situs / Laporkan Kendala</h3>
+      <div style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 20px; margin-bottom: 24px;">
+        <h4 style="color: #38BDF8; font-size: 15px; margin-bottom: 6px;">👤 Pemilik & Pengembang Platform:</h4>
+        <p style="color: #F8FAFC; font-size: 13.5px;">
+          Email Resmi: <b><a href="mailto:srizkyjati@gmail.com" style="color: #38BDF8;">srizkyjati@gmail.com</a></b><br>
+          Setiap laporan bug atau masukan yang Anda kirimkan akan langsung diterima ke inbox pemilik situs.
+        </p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <input type="text" id="help-job-id" class="form-control" placeholder="Job ID Terkait (Opsional)" />
+        <input type="text" id="help-yt-url" class="form-control" placeholder="URL YouTube Terkait (Opsional)" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tuliskan Pesan / Kendala / Masukan Anda:</label>
+        <textarea id="help-message" class="form-control" rows="4" placeholder="Jelaskan apa kendala yang dialami atau fitur yang diinginkan..."></textarea>
+      </div>
+
+      <button class="btn btn-primary" onclick="app.sendFeedback()">🚀 Buka Email Client & Kirim Laporan</button>
+      <div id="help-feedback-result" style="margin-top: 16px;"></div>
+    </div>
+
+  </section>
+
+  <!-- ========================================================================
+       4. AUTH MODAL
+       ======================================================================== -->
+  <div id="auth-modal" class="modal-overlay">
+    <div class="modal-card">
+      <button class="modal-close" onclick="app.closeAuthModal()">&times;</button>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: rgba(37, 99, 235, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; margin-bottom: 12px; box-shadow: 0 0 24px rgba(56, 189, 248, 0.2);">
+          <span style="font-size: 28px;">⚡</span>
+        </div>
+        <h2 style="font-size: 24px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; color: #FFFFFF;">PORTAL MASUK STUDIO</h2>
+        <p style="color: #94A3B8; font-size: 13.5px; margin-top: 4px;">Masukkan kredensial akun untuk mengakses Studio AI</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">👤 Username:</label>
+        <input type="text" id="auth-username" class="form-control" placeholder="admin / kenzie" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">🔒 Password:</label>
+        <input type="password" id="auth-password" class="form-control" placeholder="••••••••••••" />
+      </div>
+
+      <div id="auth-error-msg" style="display: none; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; text-align: center; color: #F43F5E; font-size: 13px; font-weight: 600;"></div>
+
+      <button class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 15px;" onclick="app.submitAuth()">🚀 MASUK SEKARANG</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
