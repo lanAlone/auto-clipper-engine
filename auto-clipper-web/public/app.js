@@ -1,7 +1,6 @@
 /**
- * Auto-Clipper Pro — Futuristic Interactive Web Controller
- * Featuring: Dynamic Particle Ambient Canvas, Live Hero Simulator,
- * Real-time Stepper Tracker, and Serverless Multi-Cloud Hub.
+ * Auto-Clipper Pro — Cinema Modern Interactive Web Controller
+ * Powered by UI/UX Pro Max Intelligence, 21st.dev Components & Framer Motion Principles.
  */
 
 const CONFIG = {
@@ -18,9 +17,10 @@ class AutoClipperApp {
     this.pollingInterval = null;
     this.simSubtitleIndex = 0;
     this.simStyles = [
-      { name: "✨ Subtitle Gaya MrBeast (Pop-in Dynamic)", color: "#FDE047", bg: "rgba(0,0,0,0.75)", text: '"RAHASIA BESAR INI..."' },
-      { name: "⚡ Subtitle Gaya Neon Cyber Glow", color: "#38BDF8", bg: "rgba(14, 28, 56, 0.85)", text: '"TIPS VIRAL 2026"' },
-      { name: "⚪ Subtitle Gaya Clean Minimalist", color: "#FFFFFF", bg: "rgba(20, 20, 20, 0.8)", text: '"Bagian ini paling penting."' }
+      { name: "✨ Subtitle Gaya MrBeast (Pop-in Dynamic)", color: "#FDE047", bg: "rgba(0,0,0,0.8)", text: '"RAHASIA BESAR INI..."' },
+      { name: "⚡ Subtitle Gaya Alex Hormozi (Word Highlight)", color: "#38BDF8", bg: "rgba(14, 28, 56, 0.9)", text: '"KAMU HARUS TAHU"' },
+      { name: "🌌 Subtitle Gaya Cyber Neon Glow", color: "#EC4899", bg: "rgba(36, 12, 30, 0.9)", text: '"VIRAL DALAM 24 JAM"' },
+      { name: "⚪ Subtitle Gaya Clean Minimalist", color: "#FFFFFF", bg: "rgba(20, 20, 20, 0.85)", text: '"Bagian ini paling penting."' }
     ];
     this.init();
   }
@@ -37,7 +37,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 1. DYNAMIC AMBIENT PARTICLE CANVAS
+  // 1. DYNAMIC AMBIENT PARTICLE CANVAS (MOUSE PARALLAX)
   // =========================================================================
   initAmbientCanvas() {
     const canvas = document.getElementById("ambient-canvas");
@@ -46,23 +46,29 @@ class AutoClipperApp {
 
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
+    let mouse = { x: width / 2, y: height / 2 };
 
     window.addEventListener("resize", () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
     });
 
+    window.addEventListener("mousemove", (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
     const particles = [];
-    const count = Math.min(width > 768 ? 45 : 20, 50);
+    const count = Math.min(width > 768 ? 48 : 22, 50);
 
     for (let i = 0; i < count; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
         radius: Math.random() * 1.8 + 0.6,
-        alpha: Math.random() * 0.4 + 0.1
+        alpha: Math.random() * 0.45 + 0.15
       });
     }
 
@@ -87,12 +93,12 @@ class AutoClipperApp {
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-          if (dist < 130) {
+          if (dist < 135) {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(56, 189, 248, ${0.12 * (1 - dist / 130)})`;
-            ctx.lineWidth = 0.6;
+            ctx.strokeStyle = `rgba(56, 189, 248, ${0.14 * (1 - dist / 135)})`;
+            ctx.lineWidth = 0.7;
             ctx.stroke();
           }
         }
@@ -131,6 +137,10 @@ class AutoClipperApp {
     badge.style.color = style.color;
     badge.style.background = style.bg;
     badge.innerText = style.text;
+    badge.classList.remove("kinetic-subtitle-box");
+    void badge.offsetWidth; // Trigger reflow for spring animation
+    badge.classList.add("kinetic-subtitle-box");
+
     desc.innerText = style.name;
     desc.style.color = style.color;
   }
@@ -271,12 +281,12 @@ class AutoClipperApp {
       const data = await resp.json();
       if (data && data.title) {
         previewContainer.innerHTML = `
-          <div style="display: flex; gap: 16px; align-items: center; background: rgba(18, 21, 31, 0.8); padding: 14px 18px; border-radius: 12px; border: 1px solid var(--card-border);">
-            <img src="${data.thumbnail_url || ''}" style="width: 120px; height: 68px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.5);" />
+          <div style="display: flex; gap: 16px; align-items: center; background: rgba(18, 23, 36, 0.85); padding: 16px 20px; border-radius: 14px; border: 1px solid var(--card-border);">
+            <img src="${data.thumbnail_url || ''}" style="width: 124px; height: 70px; object-fit: cover; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.6);" />
             <div>
-              <h4 style="margin: 0 0 4px 0; color: #FFFFFF; font-size: 14px; font-family: 'Space Grotesk', sans-serif;">${data.title}</h4>
-              <p style="margin: 0; color: #94A3B8; font-size: 12.5px;">Channel: <b>${data.author_name || 'YouTube'}</b></p>
-              <span style="font-size: 11px; color: #38BDF8; font-weight: 600;">✓ URL Siap Diproses AI</span>
+              <h4 style="margin: 0 0 4px 0; color: #FFFFFF; font-size: 14.5px; font-family: 'Space Grotesk', sans-serif;">${data.title}</h4>
+              <p style="margin: 0; color: #94A3B8; font-size: 13px;">Channel: <b>${data.author_name || 'YouTube'}</b></p>
+              <span style="font-size: 11.5px; color: #38BDF8; font-weight: 700;">✓ URL Siap Diproses Runner AI</span>
             </div>
           </div>
         `;
@@ -413,12 +423,12 @@ class AutoClipperApp {
       } else if (idx === curIdx) {
         icon = "●"; color = "#38BDF8";
       }
-      return `<div style="color: ${color}; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;"><span>${icon}</span> <span>${label}</span></div>`;
+      return `<div style="color: ${color}; display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600;"><span>${icon}</span> <span>${label}</span></div>`;
     }).join(' <span style="color: #334155;">──►</span> ');
 
     let llmBadge = "";
     if (llmUsed && llmUsed.provider_id) {
-      llmBadge = `<div style="margin-top: 12px; font-size: 12px; color: #38BDF8;">⚡ AI Provider Aktif: <b>${llmUsed.provider_id}</b> (${llmUsed.model_id || ''})</div>`;
+      llmBadge = `<div style="margin-top: 12px; font-size: 12.5px; color: #38BDF8;">⚡ AI Provider Aktif: <b>${llmUsed.provider_id}</b> (${llmUsed.model_id || ''})</div>`;
     }
 
     document.getElementById("studio-stepper-area").innerHTML = `
@@ -426,7 +436,7 @@ class AutoClipperApp {
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           ${stepsHtml}
         </div>
-        <div style="margin-top: 14px; font-size: 13.5px; color: #F8FAFC; display: flex; align-items: center; gap: 10px;">
+        <div style="margin-top: 16px; font-size: 14px; color: #F8FAFC; display: flex; align-items: center; gap: 10px;">
           <span class="pulse-indicator"></span> <span>${message}</span>
         </div>
         ${llmBadge}
@@ -439,19 +449,19 @@ class AutoClipperApp {
 
     const cards = clips.map((c) => `
       <div class="video-card">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-          <span style="font-size: 11px; background: rgba(56, 189, 248, 0.12); color: #38BDF8; padding: 4px 10px; border-radius: 6px; font-weight: 700;">KLIP #${(c.clip_id || '').toUpperCase()}</span>
-          <span style="font-size: 11px; background: rgba(245, 158, 11, 0.12); color: #F59E0B; padding: 4px 10px; border-radius: 6px; font-weight: 700;">🔥 ${c.viral_score || 8.5}/10 VIRAL</span>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 14px;">
+          <span style="font-size: 11.5px; background: rgba(56, 189, 248, 0.12); color: #38BDF8; padding: 5px 12px; border-radius: 8px; font-weight: 800;">KLIP #${(c.clip_id || '').toUpperCase()}</span>
+          <span style="font-size: 11.5px; background: rgba(245, 158, 11, 0.12); color: #F59E0B; padding: 5px 12px; border-radius: 8px; font-weight: 800;">🔥 ${c.viral_score || 8.5}/10 VIRAL</span>
         </div>
         <video src="${c.url}" controls></video>
-        <h4 style="margin: 14px 0 6px 0; color: #FFFFFF; font-size: 15px; font-family: 'Space Grotesk', sans-serif;">${c.title || 'Klip Video'}</h4>
-        <p style="color: #94A3B8; font-size: 12.5px; margin-bottom: 16px;">⏱ ${c.duration || 30}s • ${(c.hook_reason || '').slice(0, 70)}...</p>
-        <a href="${c.url}" download class="btn btn-primary" style="width: 100%; font-size: 13px;">📥 Unduh Video MP4</a>
+        <h4 style="margin: 16px 0 6px 0; color: #FFFFFF; font-size: 15.5px; font-family: 'Space Grotesk', sans-serif;">${c.title || 'Klip Video'}</h4>
+        <p style="color: #94A3B8; font-size: 13px; margin-bottom: 18px;">⏱ ${c.duration || 30}s • ${(c.hook_reason || '').slice(0, 75)}...</p>
+        <a href="${c.url}" download class="btn btn-primary" style="width: 100%; font-size: 13.5px;">📥 Unduh Video MP4</a>
       </div>
     `).join("");
 
     document.getElementById("studio-gallery-area").innerHTML = `
-      <h3 style="font-size: 19px; font-weight: 700; margin-bottom: 16px; color: #FFFFFF;">
+      <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 18px; color: #FFFFFF;">
         🎉 Klip Siap Dipublikasikan (${clips.length} Klip Berhasil Dirender):
       </h3>
       <div class="gallery-grid">${cards}</div>
@@ -460,9 +470,9 @@ class AutoClipperApp {
 
   renderError(errorMsg, jobId) {
     document.getElementById("studio-gallery-area").innerHTML = `
-      <div style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 14px; padding: 24px; margin-top: 20px;">
-        <h4 style="color: #F43F5E; font-size: 16px; margin-bottom: 8px;">⚠️ Gagal Memproses Video</h4>
-        <p style="color: #F8FAFC; font-size: 13.5px; margin-bottom: 14px;">${errorMsg}</p>
+      <div style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 16px; padding: 26px; margin-top: 22px;">
+        <h4 style="color: #F43F5E; font-size: 16.5px; margin-bottom: 8px;">⚠️ Gagal Memproses Video</h4>
+        <p style="color: #F8FAFC; font-size: 14px; margin-bottom: 16px;">${errorMsg}</p>
         <div style="display: flex; gap: 12px; align-items: center;">
           <a href="mailto:${CONFIG.OWNER_EMAIL}?subject=[Bug Laporan] Job ${jobId}&body=Error: ${encodeURIComponent(errorMsg)}" class="btn btn-primary" style="background: #F43F5E; border-color: #F43F5E; color: #fff;">
             Laporkan Bug ke Pemilik (${CONFIG.OWNER_EMAIL})
@@ -492,7 +502,7 @@ class AutoClipperApp {
     };
     localStorage.setItem("autoclipper_keys", JSON.stringify(savedKeys));
 
-    msgBox.innerHTML = `<div style="color: #10B981; font-weight: 600;">✓ API Key untuk ${provider} berhasil disimpan!</div>`;
+    msgBox.innerHTML = `<div style="color: #10B981; font-weight: 700;">✓ API Key untuk ${provider} berhasil disimpan!</div>`;
     document.getElementById("byok-key-input").value = "";
     this.loadConnectedProviders();
   }
@@ -505,7 +515,7 @@ class AutoClipperApp {
     if (savedKeys[provider]) {
       delete savedKeys[provider];
       localStorage.setItem("autoclipper_keys", JSON.stringify(savedKeys));
-      msgBox.innerHTML = `<div style="color: #10B981; font-weight: 600;">✓ Key ${provider} berhasil dihapus.</div>`;
+      msgBox.innerHTML = `<div style="color: #10B981; font-weight: 700;">✓ Key ${provider} berhasil dihapus.</div>`;
     } else {
       msgBox.innerHTML = `<div style="color: #F59E0B;">Key tidak ditemukan.</div>`;
     }
@@ -522,30 +532,30 @@ class AutoClipperApp {
     if (providers.length > 0) {
       const rows = providers.map(p => `
         <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-          <td style="padding: 12px 14px; font-weight: 700; color: #FFFFFF;">${p.toUpperCase()}</td>
-          <td style="padding: 12px 14px; font-family: monospace; color: #38BDF8;">••••${savedKeys[p].last4}</td>
-          <td style="padding: 12px 14px; color: #10B981; font-weight: 600;">✓ Active</td>
-          <td style="padding: 12px 14px; color: #94A3B8;">Multi-Model</td>
-          <td style="padding: 12px 14px; color: #64748B; font-size: 12px;">${savedKeys[p].updated_at.slice(0, 19)}</td>
+          <td style="padding: 14px 16px; font-weight: 700; color: #FFFFFF;">${p.toUpperCase()}</td>
+          <td style="padding: 14px 16px; font-family: monospace; color: #38BDF8;">••••${savedKeys[p].last4}</td>
+          <td style="padding: 14px 16px; color: #10B981; font-weight: 700;">✓ Active</td>
+          <td style="padding: 14px 16px; color: #94A3B8;">Multi-Model</td>
+          <td style="padding: 14px 16px; color: #64748B; font-size: 12.5px;">${savedKeys[p].updated_at.slice(0, 19)}</td>
         </tr>
       `).join("");
 
       tableBox.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse; background: var(--bg-surface); border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border);">
+        <table style="width: 100%; border-collapse: collapse; background: var(--bg-surface); border-radius: 14px; overflow: hidden; border: 1px solid var(--card-border);">
           <thead>
-            <tr style="background: rgba(255, 255, 255, 0.04); text-align: left; font-size: 13px; color: #94A3B8;">
-              <th style="padding: 12px 14px;">Provider</th>
-              <th style="padding: 12px 14px;">Key Preview</th>
-              <th style="padding: 12px 14px;">Status</th>
-              <th style="padding: 12px 14px;">Model Aktif</th>
-              <th style="padding: 12px 14px;">Terakhir Diperbarui</th>
+            <tr style="background: rgba(255, 255, 255, 0.04); text-align: left; font-size: 13.5px; color: #94A3B8;">
+              <th style="padding: 14px 16px;">Provider</th>
+              <th style="padding: 14px 16px;">Key Preview</th>
+              <th style="padding: 14px 16px;">Status</th>
+              <th style="padding: 14px 16px;">Model Aktif</th>
+              <th style="padding: 14px 16px;">Terakhir Diperbarui</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
       `;
     } else {
-      tableBox.innerHTML = `<p style="color: #94A3B8; font-size: 13.5px;">Belum ada provider yang tersambung. Silakan tambahkan API key di atas.</p>`;
+      tableBox.innerHTML = `<p style="color: #94A3B8; font-size: 14px;">Belum ada provider yang tersambung. Silakan tambahkan API key di atas.</p>`;
     }
   }
 
@@ -562,14 +572,14 @@ class AutoClipperApp {
     }
 
     localStorage.setItem("autoclipper_cookie", raw);
-    msg.innerHTML = `<div style="color: #10B981; font-weight: 600; margin-top: 10px;">✓ Cookie YouTube berhasil disimpan & terenkripsi lokal!</div>`;
+    msg.innerHTML = `<div style="color: #10B981; font-weight: 700; margin-top: 10px;">✓ Cookie YouTube berhasil disimpan & terenkripsi lokal!</div>`;
     document.getElementById("cookie-input").value = "";
   }
 
   deleteCookie() {
     const msg = document.getElementById("cookie-feedback-msg");
     localStorage.removeItem("autoclipper_cookie");
-    msg.innerHTML = `<div style="color: #10B981; font-weight: 600; margin-top: 10px;">✓ Cookie berhasil dihapus.</div>`;
+    msg.innerHTML = `<div style="color: #10B981; font-weight: 700; margin-top: 10px;">✓ Cookie berhasil dihapus.</div>`;
   }
 
   // =========================================================================
@@ -592,9 +602,9 @@ class AutoClipperApp {
 
     setTimeout(() => {
       resBox.innerHTML = `
-        <div style="background: var(--bg-surface); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; margin-top: 16px;">
-          <h4 style="color: #38BDF8; font-size: 15px; margin-bottom: 12px;">🎯 5 Varian Hook Viral Terbuat:</h4>
-          <ol style="color: #F8FAFC; font-size: 13.5px; padding-left: 20px; line-height: 1.8;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--card-border); border-radius: 16px; padding: 22px; margin-top: 18px;">
+          <h4 style="color: #38BDF8; font-size: 15.5px; margin-bottom: 14px;">🎯 5 Varian Hook Viral Terbuat:</h4>
+          <ol style="color: #F8FAFC; font-size: 14px; padding-left: 20px; line-height: 1.85;">
             <li><b>Contrarian:</b> "Semua orang salah paham tentang hal ini, sampai kamu melihat..."</li>
             <li><b>Question:</b> "Pernah gak kamu kepikiran kenapa 90% kreator gagal di tahap ini?"</li>
             <li><b>Shocking Stat:</b> "Data ini bikin kaget: Hanya butuh 3 detik untuk mengubah hasil video kamu!"</li>
@@ -609,9 +619,9 @@ class AutoClipperApp {
   async generateSchedule() {
     const resBox = document.getElementById("content-result-area");
     resBox.innerHTML = `
-      <div style="background: var(--bg-surface); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; margin-top: 16px;">
-        <h4 style="color: #10B981; font-size: 15px; margin-bottom: 12px;">📅 Rekomendasi Jadwal Posting:</h4>
-        <p style="color: #94A3B8; font-size: 13px; line-height: 1.6;">
+      <div style="background: var(--bg-surface); border: 1px solid var(--card-border); border-radius: 16px; padding: 22px; margin-top: 18px;">
+        <h4 style="color: #10B981; font-size: 15.5px; margin-bottom: 14px;">📅 Rekomendasi Jadwal Posting:</h4>
+        <p style="color: #94A3B8; font-size: 13.5px; line-height: 1.7;">
           • <b>TikTok:</b> Jam 12:00 WIB & 19:30 WIB (Peak Engagement)<br>
           • <b>Instagram Reels:</b> Jam 17:00 WIB - 20:00 WIB<br>
           • <b>YouTube Shorts:</b> Jam 18:30 WIB (Algoritma Rekomendasi Malam)
@@ -647,9 +657,9 @@ class AutoClipperApp {
     const mailto = `mailto:${CONFIG.OWNER_EMAIL}?subject=${subject}&body=${body}`;
 
     res.innerHTML = `
-      <div style="background: var(--bg-surface); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 16px;">
-        <h4 style="color: #10B981; font-size: 14.5px; margin-bottom: 6px;">✓ Tautan Laporan Siap!</h4>
-        <p style="color: #94A3B8; font-size: 13px; margin-bottom: 12px;">Klik tombol di bawah untuk membuka aplikasi email Anda:</p>
+      <div style="background: var(--bg-surface); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 18px;">
+        <h4 style="color: #10B981; font-size: 15px; margin-bottom: 6px;">✓ Tautan Laporan Siap!</h4>
+        <p style="color: #94A3B8; font-size: 13.5px; margin-bottom: 14px;">Klik tombol di bawah untuk membuka aplikasi email Anda:</p>
         <a href="${mailto}" target="_blank" class="btn btn-primary" style="background: #10B981; border-color: #10B981; color: #fff;">
           ✉️ Kirim Email ke ${CONFIG.OWNER_EMAIL}
         </a>
