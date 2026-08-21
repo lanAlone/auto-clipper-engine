@@ -1,12 +1,11 @@
 /**
- * Auto-Clipper Pro — Firebase Modern Web Application Controller
- * High-performance Serverless SPA with Realtime Stepper, Direct GitHub Actions Dispatches,
- * and Hugging Face Dataset Status Poller.
+ * Auto-Clipper Pro — Futuristic Interactive Web Controller
+ * Featuring: Dynamic Particle Ambient Canvas, Live Hero Simulator,
+ * Real-time Stepper Tracker, and Serverless Multi-Cloud Hub.
  */
 
 const CONFIG = {
   GITHUB_REPO: "lanAlone/auto-clipper-engine",
-  // Token loaded dynamically or from backend API
   GITHUB_PAT: localStorage.getItem("autoclipper_github_pat") || "",
   HF_DATASET_REPO: "traderade/auto-clipper-data",
   OWNER_EMAIL: "srizkyjati@gmail.com"
@@ -17,10 +16,17 @@ class AutoClipperApp {
     this.currentUser = localStorage.getItem("autoclipper_user") || "";
     this.activeJobId = null;
     this.pollingInterval = null;
+    this.simSubtitleIndex = 0;
+    this.simStyles = [
+      { name: "✨ Subtitle Gaya MrBeast (Pop-in Dynamic)", color: "#FDE047", bg: "rgba(0,0,0,0.75)", text: '"RAHASIA BESAR INI..."' },
+      { name: "⚡ Subtitle Gaya Neon Cyber Glow", color: "#38BDF8", bg: "rgba(14, 28, 56, 0.85)", text: '"TIPS VIRAL 2026"' },
+      { name: "⚪ Subtitle Gaya Clean Minimalist", color: "#FFFFFF", bg: "rgba(20, 20, 20, 0.8)", text: '"Bagian ini paling penting."' }
+    ];
     this.init();
   }
 
   init() {
+    this.initAmbientCanvas();
     this.updateAuthUI();
     const lastView = localStorage.getItem("autoclipper_view");
     if (lastView === "studio" && this.currentUser) {
@@ -31,7 +37,106 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 1. NAVIGATION & VIEW SWITCHING
+  // 1. DYNAMIC AMBIENT PARTICLE CANVAS
+  // =========================================================================
+  initAmbientCanvas() {
+    const canvas = document.getElementById("ambient-canvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    window.addEventListener("resize", () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    const particles = [];
+    const count = Math.min(width > 768 ? 45 : 20, 50);
+
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        radius: Math.random() * 1.8 + 0.6,
+        alpha: Math.random() * 0.4 + 0.1
+      });
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(56, 189, 248, ${p.alpha})`;
+        ctx.fill();
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+          if (dist < 130) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(56, 189, 248, ${0.12 * (1 - dist / 130)})`;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  // =========================================================================
+  // 2. HERO INTERACTIVE SIMULATOR CONTROLS
+  // =========================================================================
+  setSimAspect(mode) {
+    const box = document.getElementById("sim-video-box");
+    const btn169 = document.getElementById("sim-btn-16-9");
+    const btn916 = document.getElementById("sim-btn-9-16");
+
+    if (mode === "16-9") {
+      box.classList.remove("vertical-mode");
+      btn169.classList.add("active");
+      btn916.classList.remove("active");
+    } else {
+      box.classList.add("vertical-mode");
+      btn916.classList.add("active");
+      btn169.classList.remove("active");
+    }
+  }
+
+  toggleSimSubtitleStyle() {
+    this.simSubtitleIndex = (this.simSubtitleIndex + 1) % this.simStyles.length;
+    const style = this.simStyles[this.simSubtitleIndex];
+
+    const badge = document.getElementById("sim-subtitle-badge");
+    const desc = document.getElementById("sim-style-desc");
+
+    badge.style.color = style.color;
+    badge.style.background = style.bg;
+    badge.innerText = style.text;
+    desc.innerText = style.name;
+    desc.style.color = style.color;
+  }
+
+  // =========================================================================
+  // 3. NAVIGATION & VIEW ROUTING
   // =========================================================================
   showLanding() {
     document.getElementById("view-landing").style.display = "block";
@@ -90,7 +195,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 2. AUTHENTICATION (CREDENTIAL GATEWAY)
+  // 4. AUTHENTICATION
   // =========================================================================
   async submitAuth() {
     const user = document.getElementById("auth-username").value.trim();
@@ -103,7 +208,6 @@ class AutoClipperApp {
       return;
     }
 
-    // Default accounts: admin:admin123 & kenzie:kenzie123
     const validAccounts = {
       "admin": "admin123",
       "kenzie": "kenzie123"
@@ -122,7 +226,7 @@ class AutoClipperApp {
         this.openStudio();
       }
     } else {
-      errBox.innerText = "Username atau password tidak sesuai. Coba admin / admin123";
+      errBox.innerText = "Username atau password tidak sesuai. (Coba admin / admin123)";
       errBox.style.display = "block";
     }
   }
@@ -151,7 +255,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 3. LIVE YOUTUBE OEMBED PREVIEW (CORS-COMPLIANT)
+  // 5. LIVE YOUTUBE OEMBED PREVIEW
   // =========================================================================
   async onYoutubeUrlChange() {
     const url = document.getElementById("studio-yt-url").value.trim();
@@ -167,12 +271,12 @@ class AutoClipperApp {
       const data = await resp.json();
       if (data && data.title) {
         previewContainer.innerHTML = `
-          <div style="display: flex; gap: 16px; align-items: center; background: #112046; padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(56, 189, 248, 0.25);">
+          <div style="display: flex; gap: 16px; align-items: center; background: rgba(18, 21, 31, 0.8); padding: 14px 18px; border-radius: 12px; border: 1px solid var(--card-border);">
             <img src="${data.thumbnail_url || ''}" style="width: 120px; height: 68px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.5);" />
             <div>
-              <h4 style="margin: 0 0 4px 0; color: #FFFFFF; font-size: 14.5px; font-family: 'Space Grotesk', sans-serif;">${data.title}</h4>
+              <h4 style="margin: 0 0 4px 0; color: #FFFFFF; font-size: 14px; font-family: 'Space Grotesk', sans-serif;">${data.title}</h4>
               <p style="margin: 0; color: #94A3B8; font-size: 12.5px;">Channel: <b>${data.author_name || 'YouTube'}</b></p>
-              <span style="font-size: 11px; color: #38BDF8; font-weight: 700;">✓ URL Siap Diproses AI</span>
+              <span style="font-size: 11px; color: #38BDF8; font-weight: 600;">✓ URL Siap Diproses AI</span>
             </div>
           </div>
         `;
@@ -183,7 +287,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 4. VIDEO PROCESSING & REALTIME POLLING STEPPER
+  // 6. VIDEO PROCESSING & POLLING STEPPER
   // =========================================================================
   async startProcessing() {
     const ytUrl = document.getElementById("studio-yt-url").value.trim();
@@ -209,7 +313,6 @@ class AutoClipperApp {
     this.activeJobId = jobId;
 
     try {
-      // Direct GitHub Actions Workflow Dispatch
       const dispatchUrl = `https://api.github.com/repos/${CONFIG.GITHUB_REPO}/dispatches`;
       const resp = await fetch(dispatchUrl, {
         method: "POST",
@@ -239,13 +342,13 @@ class AutoClipperApp {
         const errText = await resp.text();
         stepperArea.innerHTML = `<div style="color: #F43F5E; padding: 16px; background: rgba(244,63,94,0.15); border-radius: 12px;">⚠️ Gagal memulai proses di GitHub Actions: ${errText.slice(0, 120)}</div>`;
         btn.disabled = false;
-        btn.innerText = "🚀 MULAI GENERASI KLIP OTOMATIS";
+        btn.innerText = "Mulai Generasi Klip Otomatis";
       }
 
     } catch (e) {
       stepperArea.innerHTML = `<div style="color: #F43F5E; padding: 16px; background: rgba(244,63,94,0.15); border-radius: 12px;">⚠️ Gagal menghubungi server: ${e.message}</div>`;
       btn.disabled = false;
-      btn.innerText = "🚀 MULAI GENERASI KLIP OTOMATIS";
+      btn.innerText = "Mulai Generasi Klip Otomatis";
     }
   }
 
@@ -256,7 +359,6 @@ class AutoClipperApp {
 
     this.pollingInterval = setInterval(async () => {
       try {
-        // Direct download of status JSON from Hugging Face Dataset
         const statusUrl = `https://huggingface.co/datasets/${CONFIG.HF_DATASET_REPO}/raw/main/status/${jobId}.json?t=${Date.now()}`;
         const resp = await fetch(statusUrl);
 
@@ -272,18 +374,18 @@ class AutoClipperApp {
             if (st === "done") {
               clearInterval(this.pollingInterval);
               btn.disabled = false;
-              btn.innerText = "🚀 MULAI GENERASI KLIP OTOMATIS";
+              btn.innerText = "Mulai Generasi Klip Otomatis";
               this.renderGallery(data.clips || []);
             } else if (st === "error") {
               clearInterval(this.pollingInterval);
               btn.disabled = false;
-              btn.innerText = "🚀 MULAI GENERASI KLIP OTOMATIS";
+              btn.innerText = "Mulai Generasi Klip Otomatis";
               this.renderError(data.error || msg, jobId);
             }
           }
         }
       } catch (e) {
-        // Runner still starting VM
+        // Runner starting VM
       }
     }, 5000);
   }
@@ -311,12 +413,12 @@ class AutoClipperApp {
       } else if (idx === curIdx) {
         icon = "●"; color = "#38BDF8";
       }
-      return `<div style="color: ${color}; display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600;"><span>${icon}</span> <span>${label}</span></div>`;
+      return `<div style="color: ${color}; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;"><span>${icon}</span> <span>${label}</span></div>`;
     }).join(' <span style="color: #334155;">──►</span> ');
 
     let llmBadge = "";
     if (llmUsed && llmUsed.provider_id) {
-      llmBadge = `<div style="margin-top: 12px; font-size: 12.5px; color: #38BDF8;">⚡ AI Provider Aktif: <b>${llmUsed.provider_id}</b> (${llmUsed.model_id || ''})</div>`;
+      llmBadge = `<div style="margin-top: 12px; font-size: 12px; color: #38BDF8;">⚡ AI Provider Aktif: <b>${llmUsed.provider_id}</b> (${llmUsed.model_id || ''})</div>`;
     }
 
     document.getElementById("studio-stepper-area").innerHTML = `
@@ -324,7 +426,7 @@ class AutoClipperApp {
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           ${stepsHtml}
         </div>
-        <div style="margin-top: 14px; font-size: 14px; color: #F8FAFC; display: flex; align-items: center; gap: 10px;">
+        <div style="margin-top: 14px; font-size: 13.5px; color: #F8FAFC; display: flex; align-items: center; gap: 10px;">
           <span class="pulse-indicator"></span> <span>${message}</span>
         </div>
         ${llmBadge}
@@ -338,18 +440,18 @@ class AutoClipperApp {
     const cards = clips.map((c) => `
       <div class="video-card">
         <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-          <span style="font-size: 12px; background: rgba(56, 189, 248, 0.15); color: #38BDF8; padding: 4px 10px; border-radius: 6px; font-weight: 700;">KLIP #${(c.clip_id || '').toUpperCase()}</span>
-          <span style="font-size: 12px; background: rgba(245, 158, 11, 0.15); color: #F59E0B; padding: 4px 10px; border-radius: 6px; font-weight: 700;">🔥 ${c.viral_score || 8.5}/10 VIRAL</span>
+          <span style="font-size: 11px; background: rgba(56, 189, 248, 0.12); color: #38BDF8; padding: 4px 10px; border-radius: 6px; font-weight: 700;">KLIP #${(c.clip_id || '').toUpperCase()}</span>
+          <span style="font-size: 11px; background: rgba(245, 158, 11, 0.12); color: #F59E0B; padding: 4px 10px; border-radius: 6px; font-weight: 700;">🔥 ${c.viral_score || 8.5}/10 VIRAL</span>
         </div>
         <video src="${c.url}" controls></video>
         <h4 style="margin: 14px 0 6px 0; color: #FFFFFF; font-size: 15px; font-family: 'Space Grotesk', sans-serif;">${c.title || 'Klip Video'}</h4>
         <p style="color: #94A3B8; font-size: 12.5px; margin-bottom: 16px;">⏱ ${c.duration || 30}s • ${(c.hook_reason || '').slice(0, 70)}...</p>
-        <a href="${c.url}" download class="btn btn-primary" style="width: 100%; font-size: 13.5px;">📥 Unduh Video MP4</a>
+        <a href="${c.url}" download class="btn btn-primary" style="width: 100%; font-size: 13px;">📥 Unduh Video MP4</a>
       </div>
     `).join("");
 
     document.getElementById("studio-gallery-area").innerHTML = `
-      <h3 style="font-size: 20px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; margin-bottom: 16px; color: #FFFFFF;">
+      <h3 style="font-size: 19px; font-weight: 700; margin-bottom: 16px; color: #FFFFFF;">
         🎉 Klip Siap Dipublikasikan (${clips.length} Klip Berhasil Dirender):
       </h3>
       <div class="gallery-grid">${cards}</div>
@@ -358,12 +460,12 @@ class AutoClipperApp {
 
   renderError(errorMsg, jobId) {
     document.getElementById("studio-gallery-area").innerHTML = `
-      <div style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 16px; padding: 24px; margin-top: 20px;">
-        <h4 style="color: #F43F5E; font-size: 17px; margin-bottom: 8px;">⚠️ Gagal Memproses Video</h4>
+      <div style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 14px; padding: 24px; margin-top: 20px;">
+        <h4 style="color: #F43F5E; font-size: 16px; margin-bottom: 8px;">⚠️ Gagal Memproses Video</h4>
         <p style="color: #F8FAFC; font-size: 13.5px; margin-bottom: 14px;">${errorMsg}</p>
         <div style="display: flex; gap: 12px; align-items: center;">
-          <a href="mailto:${CONFIG.OWNER_EMAIL}?subject=[Bug Laporan] Job ${jobId}&body=Error: ${encodeURIComponent(errorMsg)}" class="btn btn-primary" style="background: #F43F5E; border-color: #F43F5E;">
-            📩 Laporkan Bug ke Pemilik (${CONFIG.OWNER_EMAIL})
+          <a href="mailto:${CONFIG.OWNER_EMAIL}?subject=[Bug Laporan] Job ${jobId}&body=Error: ${encodeURIComponent(errorMsg)}" class="btn btn-primary" style="background: #F43F5E; border-color: #F43F5E; color: #fff;">
+            Laporkan Bug ke Pemilik (${CONFIG.OWNER_EMAIL})
           </a>
         </div>
       </div>
@@ -371,7 +473,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 5. BYOK & KEYS MANAGEMENT
+  // 7. BYOK & KEYS MANAGEMENT
   // =========================================================================
   saveApiKey() {
     const provider = document.getElementById("byok-provider-select").value;
@@ -419,7 +521,7 @@ class AutoClipperApp {
 
     if (providers.length > 0) {
       const rows = providers.map(p => `
-        <tr style="border-bottom: 1px solid rgba(56, 189, 248, 0.1);">
+        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
           <td style="padding: 12px 14px; font-weight: 700; color: #FFFFFF;">${p.toUpperCase()}</td>
           <td style="padding: 12px 14px; font-family: monospace; color: #38BDF8;">••••${savedKeys[p].last4}</td>
           <td style="padding: 12px 14px; color: #10B981; font-weight: 600;">✓ Active</td>
@@ -429,9 +531,9 @@ class AutoClipperApp {
       `).join("");
 
       tableBox.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse; background: #0B152E; border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border);">
+        <table style="width: 100%; border-collapse: collapse; background: var(--bg-surface); border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border);">
           <thead>
-            <tr style="background: #112046; text-align: left; font-size: 13px; color: #94A3B8;">
+            <tr style="background: rgba(255, 255, 255, 0.04); text-align: left; font-size: 13px; color: #94A3B8;">
               <th style="padding: 12px 14px;">Provider</th>
               <th style="padding: 12px 14px;">Key Preview</th>
               <th style="padding: 12px 14px;">Status</th>
@@ -448,7 +550,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 6. COOKIE & STEALTH VAULT
+  // 8. COOKIE VAULT
   // =========================================================================
   saveCookie() {
     const raw = document.getElementById("cookie-input").value.trim();
@@ -471,7 +573,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 7. BRAND VOICE & SOCIAL CONTENT
+  // 9. BRAND VOICE & SOCIAL CONTENT
   // =========================================================================
   saveBrandVoice() {
     alert("Preferensi Brand Voice berhasil disimpan!");
@@ -490,9 +592,9 @@ class AutoClipperApp {
 
     setTimeout(() => {
       resBox.innerHTML = `
-        <div style="background: #0B152E; border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; margin-top: 16px;">
-          <h4 style="color: #38BDF8; font-size: 16px; margin-bottom: 12px;">🎯 5 Varian Hook Viral Terbuat:</h4>
-          <ol style="color: #F8FAFC; font-size: 14px; padding-left: 20px; line-height: 1.8;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; margin-top: 16px;">
+          <h4 style="color: #38BDF8; font-size: 15px; margin-bottom: 12px;">🎯 5 Varian Hook Viral Terbuat:</h4>
+          <ol style="color: #F8FAFC; font-size: 13.5px; padding-left: 20px; line-height: 1.8;">
             <li><b>Contrarian:</b> "Semua orang salah paham tentang hal ini, sampai kamu melihat..."</li>
             <li><b>Question:</b> "Pernah gak kamu kepikiran kenapa 90% kreator gagal di tahap ini?"</li>
             <li><b>Shocking Stat:</b> "Data ini bikin kaget: Hanya butuh 3 detik untuk mengubah hasil video kamu!"</li>
@@ -507,9 +609,9 @@ class AutoClipperApp {
   async generateSchedule() {
     const resBox = document.getElementById("content-result-area");
     resBox.innerHTML = `
-      <div style="background: #0B152E; border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; margin-top: 16px;">
-        <h4 style="color: #10B981; font-size: 16px; margin-bottom: 12px;">📅 Rekomendasi Jadwal Posting:</h4>
-        <p style="color: #94A3B8; font-size: 13.5px; line-height: 1.6;">
+      <div style="background: var(--bg-surface); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; margin-top: 16px;">
+        <h4 style="color: #10B981; font-size: 15px; margin-bottom: 12px;">📅 Rekomendasi Jadwal Posting:</h4>
+        <p style="color: #94A3B8; font-size: 13px; line-height: 1.6;">
           • <b>TikTok:</b> Jam 12:00 WIB & 19:30 WIB (Peak Engagement)<br>
           • <b>Instagram Reels:</b> Jam 17:00 WIB - 20:00 WIB<br>
           • <b>YouTube Shorts:</b> Jam 18:30 WIB (Algoritma Rekomendasi Malam)
@@ -519,7 +621,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 8. HELP & FEEDBACK DISPATCHER
+  // 10. HELP & FEEDBACK DISPATCHER
   // =========================================================================
   sendFeedback() {
     const jid = document.getElementById("help-job-id").value.trim();
@@ -545,10 +647,10 @@ class AutoClipperApp {
     const mailto = `mailto:${CONFIG.OWNER_EMAIL}?subject=${subject}&body=${body}`;
 
     res.innerHTML = `
-      <div style="background: #0B152E; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 16px;">
-        <h4 style="color: #10B981; font-size: 15px; margin-bottom: 6px;">✓ Tautan Laporan Siap!</h4>
+      <div style="background: var(--bg-surface); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 16px;">
+        <h4 style="color: #10B981; font-size: 14.5px; margin-bottom: 6px;">✓ Tautan Laporan Siap!</h4>
         <p style="color: #94A3B8; font-size: 13px; margin-bottom: 12px;">Klik tombol di bawah untuk membuka aplikasi email Anda:</p>
-        <a href="${mailto}" target="_blank" class="btn btn-primary" style="background: #10B981; border-color: #10B981;">
+        <a href="${mailto}" target="_blank" class="btn btn-primary" style="background: #10B981; border-color: #10B981; color: #fff;">
           ✉️ Kirim Email ke ${CONFIG.OWNER_EMAIL}
         </a>
       </div>
@@ -556,5 +658,5 @@ class AutoClipperApp {
   }
 }
 
-// Instantiate global app
+// Global instance
 window.app = new AutoClipperApp();
