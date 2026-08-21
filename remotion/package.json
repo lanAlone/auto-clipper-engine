@@ -1,0 +1,26 @@
+{
+  "name": "auto-clipper-remotion",
+  "version": "2.1.0",
+  "description": "Remotion 9:16 Kinetic Video Renderer for Auto-Clipper",
+  "scripts": {
+    "build": "remotion bundle",
+    "render": "remotion render Composition",
+    "preview": "remotion preview"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.220",
+    "@remotion/media-utils": "^4.0.220",
+    "@remotion/paths": "^4.0.220",
+    "@remotion/renderer": "^4.0.220",
+    "@remotion/shapes": "^4.0.220",
+    "@remotion/transitions": "^4.0.220",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.220"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.4.5"
+  }
+}

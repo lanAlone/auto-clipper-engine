@@ -1,0 +1,39 @@
+name: Content Task Pipeline
+
+on:
+  repository_dispatch:
+    types: [content-task]
+
+jobs:
+  content-task:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install huggingface_hub requests cryptography
+
+      - name: Execute Content Task
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_DATASET_REPO_ID: ${{ secrets.HF_DATASET_REPO_ID }}
+          HF_KEYS_DATASET_REPO_ID: ${{ secrets.HF_KEYS_DATASET_REPO_ID }}
+          MASTER_ENCRYPTION_KEY: ${{ secrets.MASTER_ENCRYPTION_KEY }}
+        run: |
+          python pipeline/run_content_task.py \
+            --job_id "${{ github.event.client_payload.job_id }}" \
+            --user_id "${{ github.event.client_payload.user_id }}" \
+            --task_type "${{ github.event.client_payload.task_type }}" \
+            --video_id "${{ github.event.client_payload.video_id }}" \
+            --payload_json '${{ toJson(github.event.client_payload) }}'
