@@ -1,7 +1,7 @@
 /**
- * Auto-Clipper Pro — 21st.dev Magic UI Production Web Controller
- * Featuring: Strict Routing, Visual Card Subtitle Selector,
- * Live oEmbed Preview, Filmstrip Stepper, and Serverless Multi-Cloud Engine.
+ * Auto-Clipper Pro — 21st.dev & Framer Motion Production Web Controller
+ * Featuring: Spotlight Card Mouse Tracker, Staggered Scroll Reveals,
+ * Confetti Physics Engine, and Serverless Multi-Cloud Automation.
  */
 
 const CONFIG = {
@@ -21,7 +21,7 @@ class AutoClipperApp {
     this.simStyles = [
       { name: "✨ Subtitle Gaya MrBeast (Pop-in Dynamic)", color: "#FDE047", bg: "rgba(0,0,0,0.85)", text: '"RAHASIA BESAR INI..."' },
       { name: "⚡ Subtitle Gaya Alex Hormozi (Word Highlight)", color: "#38BDF8", bg: "rgba(14, 28, 56, 0.9)", text: '"KAMU HARUS TAHU"' },
-      { name: "🌌 Subtitle Gaya Cyber Neon Glow", color: "#EC4899", bg: "rgba(36, 12, 30, 0.9)", text: '"VIRAL DALAM 24 JAM"' },
+      { name: "🌌 Subtitle Gaya Cyber Neon Glow", color: "#FB7185", bg: "rgba(36, 12, 30, 0.9)", text: '"VIRAL DALAM 24 JAM"' },
       { name: "⚪ Subtitle Gaya Clean Minimalist", color: "#FFFFFF", bg: "rgba(20, 20, 20, 0.85)", text: '"Bagian ini paling penting."' }
     ];
     this.init();
@@ -29,6 +29,8 @@ class AutoClipperApp {
 
   init() {
     this.initAmbientCanvas();
+    this.initSpotlightTracker();
+    this.initScrollReveal();
     this.updateAuthUI();
 
     // Check URL hash for routing
@@ -58,7 +60,43 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 1. DYNAMIC AMBIENT PARTICLE CANVAS (21st.dev Style)
+  // 1. 21ST.DEV SPOTLIGHT CARD MOUSE TRACKER
+  // =========================================================================
+  initSpotlightTracker() {
+    document.addEventListener("mousemove", (e) => {
+      const cards = document.querySelectorAll(".spotlight-card");
+      cards.forEach((card) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty("--mouse-x", `${x}px`);
+        card.style.setProperty("--mouse-y", `${y}px`);
+      });
+    });
+  }
+
+  // =========================================================================
+  // 2. FRAMER-LIKE SPRING SCROLL REVEAL (IntersectionObserver)
+  // =========================================================================
+  initScrollReveal() {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-revealed");
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+    );
+
+    document.querySelectorAll(".reveal-on-scroll").forEach((el) => {
+      observer.observe(el);
+    });
+  }
+
+  // =========================================================================
+  // 3. DYNAMIC AMBIENT PARTICLE CANVAS
   // =========================================================================
   initAmbientCanvas() {
     const canvas = document.getElementById("ambient-canvas");
@@ -74,16 +112,16 @@ class AutoClipperApp {
     });
 
     const particles = [];
-    const count = Math.min(width > 768 ? 45 : 20, 48);
+    const count = Math.min(width > 768 ? 40 : 18, 40);
 
     for (let i = 0; i < count; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.45,
-        vy: (Math.random() - 0.5) * 0.45,
-        radius: Math.random() * 1.8 + 0.6,
-        alpha: Math.random() * 0.45 + 0.15
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        radius: Math.random() * 1.6 + 0.6,
+        alpha: Math.random() * 0.35 + 0.1
       });
     }
 
@@ -102,18 +140,18 @@ class AutoClipperApp {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(56, 189, 248, ${p.alpha})`;
+        ctx.fillStyle = `rgba(139, 92, 246, ${p.alpha})`;
         ctx.fill();
 
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-          if (dist < 135) {
+          if (dist < 120) {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(56, 189, 248, ${0.14 * (1 - dist / 135)})`;
-            ctx.lineWidth = 0.7;
+            ctx.strokeStyle = `rgba(139, 92, 246, ${0.12 * (1 - dist / 120)})`;
+            ctx.lineWidth = 0.6;
             ctx.stroke();
           }
         }
@@ -124,7 +162,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 2. ROUTING & VIEW CONTROLLER (LANDING vs DASHBOARD APP SHELL)
+  // 4. ROUTING & VIEW CONTROLLER
   // =========================================================================
   navigateTo(route) {
     const landingView = document.getElementById("view-landing");
@@ -146,6 +184,7 @@ class AutoClipperApp {
       dashboardView.style.display = "none";
       window.location.hash = "";
       this.closeAuthModal();
+      this.closePricingModal();
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
@@ -184,7 +223,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 3. VISUAL CARD SELECTOR (SUBTITLE STYLES)
+  // 5. VISUAL CARD SELECTOR (SUBTITLE STYLES)
   // =========================================================================
   selectSubtitleStyle(styleKey, cardId) {
     document.getElementById("dash-caption-style").value = styleKey;
@@ -194,7 +233,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 4. HERO SIMULATOR CONTROLS
+  // 6. HERO SIMULATOR CONTROLS
   // =========================================================================
   setSimAspect(mode) {
     const box = document.getElementById("sim-video-box");
@@ -231,7 +270,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 5. AUTHENTICATION & LOGIN GATE
+  // 7. AUTHENTICATION & LOGIN GATE
   // =========================================================================
   openAuthModal() {
     document.getElementById("auth-modal").classList.add("active");
@@ -264,6 +303,7 @@ class AutoClipperApp {
       localStorage.setItem("autoclipper_user", user);
       this.updateAuthUI();
       this.closeAuthModal();
+      this.triggerConfetti();
       this.navigateTo("dashboard");
     } else {
       errBox.innerText = "Username atau password tidak sesuai. (Coba admin / admin123)";
@@ -292,7 +332,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 5B. PRICING MODAL & SALES CHECKOUT HANDLER (RP 300.000)
+  // 8. PRICING MODAL & CELEBRATION CONFETTI
   // =========================================================================
   openPricingModal() {
     const modal = document.getElementById("pricing-modal");
@@ -310,22 +350,30 @@ class AutoClipperApp {
     }
   }
 
+  triggerConfetti() {
+    if (typeof confetti === "function") {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  }
+
   handlePurchaseClick() {
-    const checkoutBtn = document.getElementById("btn-pricing-checkout");
+    this.triggerConfetti();
     const msgBox = document.getElementById("pricing-notification-msg");
     const salesUrl = CONFIG.SALES_CHECKOUT_URL || localStorage.getItem("autoclipper_sales_url");
 
     if (salesUrl && salesUrl.startsWith("http")) {
-      // Redirect to actual sales link if provided
       window.open(salesUrl, "_blank");
     } else {
-      // Show elegant simulated checkout ready state
       if (msgBox) {
         msgBox.innerHTML = `
-          <div style="font-weight: 700; color: #10B981; margin-bottom: 4px;">✓ Gateway Penjualan Terhubung!</div>
-          <div style="font-size: 12.5px; color: #E2E8F0;">
+          <div style="font-weight: 700; color: #34D399; margin-bottom: 4px;">✓ Gateway Penjualan Terhubung!</div>
+          <div style="font-size: 12px; color: #E2E8F0;">
             Harga Lisensi: <b>Rp 300.000 (Lifetime)</b>.<br>
-            Tautan penjualan siap disematkan. Untuk pembelian manual saat ini, silakan hubungi tim kami di <b>support@autoclipper.io</b>.
+            Tautan checkout siap disematkan. Untuk pembelian manual saat ini, silakan hubungi <b>support@autoclipper.io</b>.
           </div>
         `;
         msgBox.style.display = "block";
@@ -334,7 +382,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 6. LIVE YOUTUBE OEMBED PREVIEW
+  // 9. LIVE YOUTUBE OEMBED PREVIEW
   // =========================================================================
   async onYoutubeUrlChange() {
     const url = document.getElementById("dash-yt-url").value.trim();
@@ -350,12 +398,12 @@ class AutoClipperApp {
       const data = await resp.json();
       if (data && data.title) {
         previewContainer.innerHTML = `
-          <div style="display: flex; gap: 16px; align-items: center; background: rgba(18, 23, 36, 0.85); padding: 16px 20px; border-radius: 14px; border: 1px solid var(--card-border);">
-            <img src="${data.thumbnail_url || ''}" style="width: 124px; height: 70px; object-fit: cover; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.6);" />
+          <div style="display: flex; gap: 14px; align-items: center; background: rgba(14, 18, 28, 0.9); padding: 14px 18px; border-radius: 14px; border: 1px solid var(--border-subtle);">
+            <img src="${data.thumbnail_url || ''}" style="width: 110px; height: 62px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.6);" />
             <div>
-              <h4 style="margin: 0 0 4px 0; color: #FFFFFF; font-size: 14.5px; font-family: 'Space Grotesk', sans-serif;">${data.title}</h4>
-              <p style="margin: 0; color: #94A3B8; font-size: 13px;">Channel: <b>${data.author_name || 'YouTube'}</b></p>
-              <span style="font-size: 11.5px; color: #38BDF8; font-weight: 700;">✓ URL Siap Diproses Runner AI</span>
+              <h4 style="margin: 0 0 3px 0; color: #FFFFFF; font-size: 14px; font-family: 'Space Grotesk', sans-serif;">${data.title}</h4>
+              <p style="margin: 0; color: var(--text-dim); font-size: 12.5px;">Channel: <b>${data.author_name || 'YouTube'}</b></p>
+              <span style="font-size: 11px; color: #34D399; font-weight: 700;">✓ URL Siap Diproses Runner AI</span>
             </div>
           </div>
         `;
@@ -366,7 +414,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 7. VIDEO PROCESSING & DYNAMIC FILMSTRIP STEPPER
+  // 10. VIDEO PROCESSING & DYNAMIC FILMSTRIP STEPPER
   // =========================================================================
   async startProcessing() {
     const ytUrl = document.getElementById("dash-yt-url").value.trim();
@@ -419,13 +467,13 @@ class AutoClipperApp {
         this.startPolling(jobId);
       } else {
         const errText = await resp.text();
-        stepperArea.innerHTML = `<div style="color: #F43F5E; padding: 16px; background: rgba(244,63,94,0.15); border-radius: 12px;">⚠️ Gagal memulai proses di GitHub Actions: ${errText.slice(0, 120)}</div>`;
+        stepperArea.innerHTML = `<div style="color: #FB7185; padding: 14px; background: rgba(244,63,94,0.15); border-radius: 12px;">⚠️ Gagal memulai proses di GitHub Actions: ${errText.slice(0, 120)}</div>`;
         btn.disabled = false;
         btn.innerText = "🚀 Mulai Generasi Klip Otomatis";
       }
 
     } catch (e) {
-      stepperArea.innerHTML = `<div style="color: #F43F5E; padding: 16px; background: rgba(244,63,94,0.15); border-radius: 12px;">⚠️ Gagal menghubungi server: ${e.message}</div>`;
+      stepperArea.innerHTML = `<div style="color: #FB7185; padding: 14px; background: rgba(244,63,94,0.15); border-radius: 12px;">⚠️ Gagal menghubungi server: ${e.message}</div>`;
       btn.disabled = false;
       btn.innerText = "🚀 Mulai Generasi Klip Otomatis";
     }
@@ -454,6 +502,7 @@ class AutoClipperApp {
               clearInterval(this.pollingInterval);
               btn.disabled = false;
               btn.innerText = "🚀 Mulai Generasi Klip Otomatis";
+              this.triggerConfetti();
               this.renderGallery(data.clips || []);
             } else if (st === "error") {
               clearInterval(this.pollingInterval);
@@ -473,9 +522,9 @@ class AutoClipperApp {
     const steps = [
       ["queued", "1. Antrean"],
       ["downloading", "2. Unduh Video"],
-      ["transcribing", "3. Transkripsi Suara"],
-      ["detecting", "4. Deteksi Momen Viral"],
-      ["rendering", "5. Render Vertikal 9:16"],
+      ["transcribing", "3. Transkripsi"],
+      ["detecting", "4. Deteksi Hook"],
+      ["rendering", "5. Render 9:16"],
       ["done", "6. Selesai"]
     ];
 
@@ -486,26 +535,26 @@ class AutoClipperApp {
       let icon = "○";
       let color = "#64748B";
       if (status === "error") {
-        icon = "✕"; color = "#F43F5E";
+        icon = "✕"; color = "#FB7185";
       } else if (idx < curIdx || status === "done") {
-        icon = "✓"; color = "#10B981";
+        icon = "✓"; color = "#34D399";
       } else if (idx === curIdx) {
-        icon = "●"; color = "#38BDF8";
+        icon = "●"; color = "#C084FC";
       }
-      return `<div style="color: ${color}; display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600;"><span>${icon}</span> <span>${label}</span></div>`;
-    }).join(' <span style="color: #334155;">──►</span> ');
+      return `<div style="color: ${color}; display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600;"><span>${icon}</span> <span>${label}</span></div>`;
+    }).join(' <span style="color: #334155;">→</span> ');
 
     let llmBadge = "";
     if (llmUsed && llmUsed.provider_id) {
-      llmBadge = `<div style="margin-top: 12px; font-size: 12.5px; color: #38BDF8;">⚡ AI Provider Aktif: <b>${llmUsed.provider_id}</b> (${llmUsed.model_id || ''})</div>`;
+      llmBadge = `<div style="margin-top: 10px; font-size: 12px; color: #C084FC;">⚡ AI Provider Aktif: <b>${llmUsed.provider_id}</b> (${llmUsed.model_id || ''})</div>`;
     }
 
     document.getElementById("dash-stepper-area").innerHTML = `
       <div class="stepper-box">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           ${stepsHtml}
         </div>
-        <div style="margin-top: 16px; font-size: 14px; color: #F8FAFC; display: flex; align-items: center; gap: 12px;">
+        <div style="margin-top: 14px; font-size: 13.5px; color: #F8FAFC; display: flex; align-items: center; gap: 12px;">
           <div class="filmstrip-loader">
             <div class="film-cell"></div>
             <div class="film-cell"></div>
@@ -523,33 +572,33 @@ class AutoClipperApp {
     if (!clips || clips.length === 0) return;
 
     const cards = clips.map((c) => `
-      <div class="video-card">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 14px;">
-          <span style="font-size: 11.5px; background: rgba(56, 189, 248, 0.12); color: #38BDF8; padding: 5px 12px; border-radius: 8px; font-weight: 800;">KLIP #${(c.clip_id || '').toUpperCase()}</span>
-          <span style="font-size: 11.5px; background: rgba(245, 158, 11, 0.12); color: #F59E0B; padding: 5px 12px; border-radius: 8px; font-weight: 800;">🔥 ${c.viral_score || 8.5}/10 VIRAL</span>
+      <div class="spotlight-card" style="padding: 20px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+          <span style="font-size: 11px; background: rgba(139, 92, 246, 0.12); color: #C084FC; padding: 4px 10px; border-radius: 6px; font-weight: 800;">KLIP #${(c.clip_id || '').toUpperCase()}</span>
+          <span style="font-size: 11px; background: rgba(245, 158, 11, 0.12); color: #FBBF24; padding: 4px 10px; border-radius: 6px; font-weight: 800;">🔥 ${c.viral_score || 8.5}/10 VIRAL</span>
         </div>
-        <video src="${c.url}" controls></video>
-        <h4 style="margin: 16px 0 6px 0; color: #FFFFFF; font-size: 15.5px; font-family: 'Space Grotesk', sans-serif;">${c.title || 'Klip Video'}</h4>
-        <p style="color: #94A3B8; font-size: 13px; margin-bottom: 18px;">⏱ ${c.duration || 30}s • ${(c.hook_reason || '').slice(0, 75)}...</p>
-        <a href="${c.url}" download class="btn btn-primary" style="width: 100%; font-size: 13.5px;">📥 Unduh Video MP4</a>
+        <video src="${c.url}" controls style="width: 100%; border-radius: 10px; max-height: 440px; background: #000;"></video>
+        <h4 style="margin: 14px 0 4px 0; color: #FFFFFF; font-size: 15px; font-family: 'Space Grotesk', sans-serif;">${c.title || 'Klip Video'}</h4>
+        <p style="color: var(--text-dim); font-size: 12.5px; margin-bottom: 16px;">⏱ ${c.duration || 30}s • ${(c.hook_reason || '').slice(0, 70)}...</p>
+        <a href="${c.url}" download class="btn btn-primary" style="width: 100%; font-size: 13px; padding: 10px;">📥 Unduh Video MP4</a>
       </div>
     `).join("");
 
     document.getElementById("dash-gallery-area").innerHTML = `
-      <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 18px; color: #FFFFFF;">
+      <h3 style="font-size: 19px; font-weight: 700; margin-bottom: 16px; color: #FFFFFF;">
         🎉 Klip Siap Dipublikasikan (${clips.length} Klip Berhasil Dirender):
       </h3>
-      <div class="gallery-grid">${cards}</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px;">${cards}</div>
     `;
   }
 
   renderError(errorMsg, jobId) {
     document.getElementById("dash-gallery-area").innerHTML = `
-      <div style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 16px; padding: 26px; margin-top: 22px;">
-        <h4 style="color: #F43F5E; font-size: 16.5px; margin-bottom: 8px;">⚠️ Gagal Memproses Video</h4>
-        <p style="color: #F8FAFC; font-size: 14px; margin-bottom: 16px;">${errorMsg}</p>
-        <div style="display: flex; gap: 12px; align-items: center;">
-          <a href="mailto:${CONFIG.SUPPORT_EMAIL}?subject=[Bug Laporan] Job ${jobId}&body=Error: ${encodeURIComponent(errorMsg)}" class="btn btn-primary" style="background: #F43F5E; border-color: #F43F5E; color: #fff;">
+      <div style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 16px; padding: 22px; margin-top: 20px;">
+        <h4 style="color: #FB7185; font-size: 16px; margin-bottom: 6px;">⚠️ Gagal Memproses Video</h4>
+        <p style="color: #F8FAFC; font-size: 13.5px; margin-bottom: 14px;">${errorMsg}</p>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <a href="mailto:${CONFIG.SUPPORT_EMAIL}?subject=[Bug Laporan] Job ${jobId}&body=Error: ${encodeURIComponent(errorMsg)}" class="btn btn-primary" style="background: #FB7185; border-color: #FB7185; color: #fff; font-size: 13px;">
             Hubungi Support (${CONFIG.SUPPORT_EMAIL})
           </a>
         </div>
@@ -558,7 +607,7 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 8. BYOK & KEYS MANAGEMENT
+  // 11. BYOK & KEYS MANAGEMENT
   // =========================================================================
   saveApiKey() {
     const provider = document.getElementById("byok-provider-select").value;
@@ -577,7 +626,7 @@ class AutoClipperApp {
     };
     localStorage.setItem("autoclipper_keys", JSON.stringify(savedKeys));
 
-    msgBox.innerHTML = `<div style="color: #10B981; font-weight: 700;">✓ API Key untuk ${provider} berhasil disimpan!</div>`;
+    msgBox.innerHTML = `<div style="color: #34D399; font-weight: 700;">✓ API Key untuk ${provider} berhasil disimpan!</div>`;
     document.getElementById("byok-key-input").value = "";
     this.loadConnectedProviders();
   }
@@ -590,9 +639,9 @@ class AutoClipperApp {
     if (savedKeys[provider]) {
       delete savedKeys[provider];
       localStorage.setItem("autoclipper_keys", JSON.stringify(savedKeys));
-      msgBox.innerHTML = `<div style="color: #10B981; font-weight: 700;">✓ Key ${provider} berhasil dihapus.</div>`;
+      msgBox.innerHTML = `<div style="color: #34D399; font-weight: 700;">✓ Key ${provider} berhasil dihapus.</div>`;
     } else {
-      msgBox.innerHTML = `<div style="color: #F59E0B;">Key tidak ditemukan.</div>`;
+      msgBox.innerHTML = `<div style="color: #FBBF24;">Key tidak ditemukan.</div>`;
     }
     this.loadConnectedProviders();
   }
@@ -607,35 +656,33 @@ class AutoClipperApp {
     if (providers.length > 0) {
       const rows = providers.map(p => `
         <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-          <td style="padding: 14px 16px; font-weight: 700; color: #FFFFFF;">${p.toUpperCase()}</td>
-          <td style="padding: 14px 16px; font-family: monospace; color: #38BDF8;">••••${savedKeys[p].last4}</td>
-          <td style="padding: 14px 16px; color: #10B981; font-weight: 700;">✓ Active</td>
-          <td style="padding: 14px 16px; color: #94A3B8;">Multi-Model</td>
-          <td style="padding: 14px 16px; color: #64748B; font-size: 12.5px;">${savedKeys[p].updated_at.slice(0, 19)}</td>
+          <td style="padding: 12px 14px; font-weight: 700; color: #FFFFFF;">${p.toUpperCase()}</td>
+          <td style="padding: 12px 14px; font-family: 'JetBrains Mono', monospace; color: #C084FC;">••••${savedKeys[p].last4}</td>
+          <td style="padding: 12px 14px; color: #34D399; font-weight: 700;">✓ Active</td>
+          <td style="padding: 12px 14px; color: var(--text-dim);">${savedKeys[p].updated_at.slice(0, 19)}</td>
         </tr>
       `).join("");
 
       tableBox.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse; background: var(--bg-surface); border-radius: 14px; overflow: hidden; border: 1px solid var(--card-border);">
+        <table style="width: 100%; border-collapse: collapse; background: var(--bg-surface-glass); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-subtle);">
           <thead>
-            <tr style="background: rgba(255, 255, 255, 0.04); text-align: left; font-size: 13.5px; color: #94A3B8;">
-              <th style="padding: 14px 16px;">Provider</th>
-              <th style="padding: 14px 16px;">Key Preview</th>
-              <th style="padding: 14px 16px;">Status</th>
-              <th style="padding: 14px 16px;">Model Aktif</th>
-              <th style="padding: 14px 16px;">Terakhir Diperbarui</th>
+            <tr style="background: rgba(255, 255, 255, 0.03); text-align: left; font-size: 13px; color: var(--text-dim);">
+              <th style="padding: 12px 14px;">Provider</th>
+              <th style="padding: 12px 14px;">Key Preview</th>
+              <th style="padding: 12px 14px;">Status</th>
+              <th style="padding: 12px 14px;">Terakhir Diperbarui</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
       `;
     } else {
-      tableBox.innerHTML = `<p style="color: #94A3B8; font-size: 14px;">Belum ada provider yang tersambung. Silakan tambahkan API key di atas.</p>`;
+      tableBox.innerHTML = `<p style="color: var(--text-dim); font-size: 13.5px;">Belum ada provider yang tersambung. Silakan tambahkan API key di atas.</p>`;
     }
   }
 
   // =========================================================================
-  // 9. COOKIE VAULT
+  // 12. COOKIE VAULT
   // =========================================================================
   saveCookie() {
     const raw = document.getElementById("cookie-input").value.trim();
@@ -647,18 +694,18 @@ class AutoClipperApp {
     }
 
     localStorage.setItem("autoclipper_cookie", raw);
-    msg.innerHTML = `<div style="color: #10B981; font-weight: 700; margin-top: 10px;">✓ Cookie YouTube berhasil disimpan & terenkripsi lokal!</div>`;
+    msg.innerHTML = `<div style="color: #34D399; font-weight: 700; margin-top: 10px;">✓ Cookie YouTube berhasil disimpan & terenkripsi lokal!</div>`;
     document.getElementById("cookie-input").value = "";
   }
 
   deleteCookie() {
     const msg = document.getElementById("cookie-feedback-msg");
     localStorage.removeItem("autoclipper_cookie");
-    msg.innerHTML = `<div style="color: #10B981; font-weight: 700; margin-top: 10px;">✓ Cookie berhasil dihapus.</div>`;
+    msg.innerHTML = `<div style="color: #34D399; font-weight: 700; margin-top: 10px;">✓ Cookie berhasil dihapus.</div>`;
   }
 
   // =========================================================================
-  // 10. BRAND VOICE & SOCIAL CONTENT
+  // 13. BRAND VOICE & SOCIAL CONTENT
   // =========================================================================
   saveBrandVoice() {
     alert("Preferensi Brand Voice berhasil disimpan!");
@@ -673,13 +720,13 @@ class AutoClipperApp {
       return;
     }
 
-    resBox.innerHTML = `<div style="padding: 16px; color: #38BDF8;">⏳ Sedang membuat 5 varian hook viral dengan AI...</div>`;
+    resBox.innerHTML = `<div style="padding: 14px; color: #C084FC;">⏳ Sedang membuat 5 varian hook viral dengan AI...</div>`;
 
     setTimeout(() => {
       resBox.innerHTML = `
-        <div style="background: var(--bg-surface); border: 1px solid var(--card-border); border-radius: 16px; padding: 22px; margin-top: 18px;">
-          <h4 style="color: #38BDF8; font-size: 15.5px; margin-bottom: 14px;">🎯 5 Varian Hook Viral Terbuat:</h4>
-          <ol style="color: #F8FAFC; font-size: 14px; padding-left: 20px; line-height: 1.85;">
+        <div class="spotlight-card" style="padding: 18px; margin-top: 14px;">
+          <h4 style="color: #C084FC; font-size: 14.5px; margin-bottom: 10px;">🎯 5 Varian Hook Viral Terbuat:</h4>
+          <ol style="color: var(--text-secondary); font-size: 13.5px; padding-left: 18px; line-height: 1.75;">
             <li><b>Contrarian:</b> "Semua orang salah paham tentang hal ini, sampai kamu melihat..."</li>
             <li><b>Question:</b> "Pernah gak kamu kepikiran kenapa 90% kreator gagal di tahap ini?"</li>
             <li><b>Shocking Stat:</b> "Data ini bikin kaget: Hanya butuh 3 detik untuk mengubah hasil video kamu!"</li>
@@ -688,15 +735,15 @@ class AutoClipperApp {
           </ol>
         </div>
       `;
-    }, 1200);
+    }, 1000);
   }
 
   async generateSchedule() {
     const resBox = document.getElementById("content-result-area");
     resBox.innerHTML = `
-      <div style="background: var(--bg-surface); border: 1px solid var(--card-border); border-radius: 16px; padding: 22px; margin-top: 18px;">
-        <h4 style="color: #10B981; font-size: 15.5px; margin-bottom: 14px;">📅 Rekomendasi Jadwal Posting:</h4>
-        <p style="color: #94A3B8; font-size: 13.5px; line-height: 1.7;">
+      <div class="spotlight-card" style="padding: 18px; margin-top: 14px;">
+        <h4 style="color: #34D399; font-size: 14.5px; margin-bottom: 10px;">📅 Rekomendasi Jadwal Posting:</h4>
+        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.65;">
           • <b>TikTok:</b> Jam 12:00 WIB & 19:30 WIB (Peak Engagement)<br>
           • <b>Instagram Reels:</b> Jam 17:00 WIB - 20:00 WIB<br>
           • <b>YouTube Shorts:</b> Jam 18:30 WIB (Algoritma Rekomendasi Malam)
@@ -706,11 +753,9 @@ class AutoClipperApp {
   }
 
   // =========================================================================
-  // 11. HELP & FEEDBACK DISPATCHER
+  // 14. HELP & FEEDBACK DISPATCHER
   // =========================================================================
   sendFeedback() {
-    const jid = document.getElementById("help-job-id").value.trim();
-    const yurl = document.getElementById("help-yt-url").value.trim();
     const msg = document.getElementById("help-message").value.trim();
     const res = document.getElementById("help-feedback-result");
 
@@ -720,22 +765,14 @@ class AutoClipperApp {
     }
 
     const subject = encodeURIComponent(`[Auto-Clipper Support] Tiket dari ${this.currentUser || 'User'}`);
-    const body = encodeURIComponent(
-      `Halo Tim Support Auto-Clipper,\n\n` +
-      `User ID: ${this.currentUser || 'Anonymous'}\n` +
-      `Job ID: ${jid || 'N/A'}\n` +
-      `URL Video: ${yurl || 'N/A'}\n\n` +
-      `Pesan:\n${msg}\n\n` +
-      `Dikirim dari Portal Resmi Auto-Clipper Pro`
-    );
-
+    const body = encodeURIComponent(`Halo Tim Support Auto-Clipper,\n\nUser: ${this.currentUser || 'User'}\n\nPesan:\n${msg}`);
     const mailto = `mailto:${CONFIG.SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
 
     res.innerHTML = `
-      <div style="background: var(--bg-surface); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 18px;">
-        <h4 style="color: #10B981; font-size: 15px; margin-bottom: 6px;">✓ Tiket Laporan Siap!</h4>
-        <p style="color: #94A3B8; font-size: 13.5px; margin-bottom: 14px;">Klik tombol di bawah untuk membuka aplikasi email Anda:</p>
-        <a href="${mailto}" target="_blank" class="btn btn-primary" style="background: #10B981; border-color: #10B981; color: #fff;">
+      <div style="background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 12px; padding: 14px;">
+        <h4 style="color: #34D399; font-size: 14px; margin-bottom: 4px;">✓ Tiket Laporan Siap!</h4>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 10px;">Klik tombol di bawah untuk membuka email:</p>
+        <a href="${mailto}" target="_blank" class="btn btn-primary" style="background: #34D399; border-color: #34D399; color: #000; font-size: 13px;">
           ✉️ Kirim Email ke ${CONFIG.SUPPORT_EMAIL}
         </a>
       </div>
