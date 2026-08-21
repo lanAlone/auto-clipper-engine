@@ -430,10 +430,10 @@ class AutoClipperApp {
     const loginBtn = document.getElementById("nav-login-btn");
     if (loginBtn) {
       if (this.currentUser) {
-        loginBtn.innerText = `👑 ${this.currentUser}`;
+        loginBtn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#34D399;box-shadow:0 0 6px #34D399;"></span>${this.currentUser}</span>`;
         loginBtn.onclick = () => this.navigateTo("dashboard");
       } else {
-        loginBtn.innerText = "Masuk Akun";
+        loginBtn.innerText = "Masuk";
         loginBtn.onclick = () => this.openAuthModal();
       }
     }
