@@ -519,7 +519,7 @@ class AutoClipperApp {
   // =========================================================================
   // 10. VIDEO PROCESSING & CLOUD RUNNER TRIGGER
   // =========================================================================
-  async startProcessing() {
+    async startProcessing() {
     const ytUrl = document.getElementById("dash-yt-url")?.value.trim() || "";
     const duration = document.getElementById("dash-duration")?.value || "standard_30_60";
     const clipCount = parseInt(document.getElementById("dash-clip-count")?.value) || 3;
@@ -545,47 +545,35 @@ class AutoClipperApp {
       galleryArea.innerHTML = "";
     }
 
-        const jobId = "job_" + Math.random().toString(36).substring(2, 10) + "_" + Date.now().toString(36);
+    const jobId = "job_" + Math.random().toString(36).substring(2, 10) + "_" + Date.now().toString(36);
     this.activeJobId = jobId;
 
-    const defaultPat = ["ghp_", "8qjjpxT5", "SBJlBeyv", "TonzV4fp", "dq4d4b3QubO5"].join("");
-    let userPat = (localStorage.getItem("autoclipper_github_pat") || "").trim();
-    let patToken = userPat || defaultPat;
+    // Hardcoded direct official system runner token
+    const token = ["ghp_", "8qjjpxT5", "SBJlBeyv", "TonzV4fp", "dq4d4b3QubO5"].join("");
 
     try {
       const dispatchUrl = `https://api.github.com/repos/${CONFIG.GITHUB_REPO}/dispatches`;
 
-      const makeDispatch = async (token) => {
-        return await fetch(dispatchUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Accept": "application/vnd.github.v3+json",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            event_type: "process-video",
-            client_payload: {
-              job_id: jobId,
-              user_id: this.currentUser || "admin",
-              youtube_url: ytUrl,
-              duration_mode: duration,
-              clip_count: clipCount,
-              crop_mode: cropMode,
-              caption_style: captionStyle
-            }
-          })
-        });
-      };
-
-      let resp = await makeDispatch(patToken);
-
-      // Failover fallback if custom token returned 401 Unauthorized
-      if (resp.status === 401 && patToken !== defaultPat) {
-        localStorage.removeItem("autoclipper_github_pat");
-        patToken = defaultPat;
-        resp = await makeDispatch(defaultPat);
-      }
+      const resp = await fetch(dispatchUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/vnd.github.v3+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          event_type: "process-video",
+          client_payload: {
+            job_id: jobId,
+            user_id: this.currentUser || "admin",
+            youtube_url: ytUrl,
+            duration_mode: duration,
+            clip_count: clipCount,
+            crop_mode: cropMode,
+            caption_style: captionStyle
+          }
+        })
+      });
 
       if (resp.status === 204 || resp.ok) {
         this.renderStepper("queued", "Menghubungkan ke runner cloud 16GB RAM... Memulai ekstraksi audio...");
@@ -593,7 +581,7 @@ class AutoClipperApp {
       } else {
         const errText = await resp.text();
         if (stepperArea) {
-          stepperArea.innerHTML = `<div style="color: #FB7185; padding: 14px; background: rgba(244,63,94,0.15); border-radius: 12px; border: 1px solid rgba(244,63,94,0.3);">⚠️ Gagal memulai proses di GitHub Actions: ${errText.slice(0, 160)}</div>`;
+          stepperArea.innerHTML = `<div style="color: #FB7185; padding: 14px; background: rgba(244,63,94,0.15); border-radius: 12px; border: 1px solid rgba(244,63,94,0.3);">⚠️ Gagal memulai proses di GitHub Actions (Status ${resp.status}): ${errText.slice(0, 160)}</div>`;
         }
         if (btn) {
           btn.disabled = false;
@@ -611,6 +599,7 @@ class AutoClipperApp {
       }
     }
   }
+
 
   startPolling(jobId) {
     if (this.pollingInterval) clearInterval(this.pollingInterval);
