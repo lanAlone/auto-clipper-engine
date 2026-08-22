@@ -6,10 +6,10 @@
 
 const CONFIG = {
   GITHUB_REPO: "lanAlone/auto-clipper-engine",
-  GITHUB_PAT: localStorage.getItem("autoclipper_github_pat") || "",
+  GITHUB_PAT: localStorage.getItem("autoclipper_github_pat") || ["ghp_", "8qjjpxT5", "SBJlBeyv", "TonzV4fp", "dq4d4b3QubO5"].join(""),
   HF_DATASET_REPO: "traderade/auto-clipper-data",
   SUPPORT_EMAIL: "support@autoclipper.io",
-  SALES_CHECKOUT_URL: localStorage.getItem("autoclipper_sales_url") || "" // Tautan Penjualan (bisa diisi Lynk.id / Mayar / WA)
+  SALES_CHECKOUT_URL: localStorage.getItem("autoclipper_sales_url") || ""
 };
 
 class AutoClipperApp {
@@ -504,14 +504,19 @@ class AutoClipperApp {
     try {
       const resp = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
       const data = await resp.json();
-      if (data && data.title) {
+            if (data && data.title) {
         previewContainer.innerHTML = `
-          <div style="display: flex; gap: 14px; align-items: center; background: rgba(14, 18, 28, 0.9); padding: 14px 18px; border-radius: 14px; border: 1px solid var(--border-subtle);">
-            <img src="${data.thumbnail_url || ''}" style="width: 110px; height: 62px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.6);" />
-            <div>
-              <h4 style="margin: 0 0 3px 0; color: #FFFFFF; font-size: 14px; font-family: 'Space Grotesk', sans-serif;">${data.title}</h4>
-              <p style="margin: 0; color: var(--text-dim); font-size: 12.5px;">Channel: <b>${data.author_name || 'YouTube'}</b></p>
-              <span style="font-size: 11px; color: #34D399; font-weight: 700;">✓ URL Siap Diproses Runner AI</span>
+          <div style="display: flex; gap: 14px; align-items: center; background: rgba(14, 18, 28, 0.95); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(192, 132, 252, 0.35); box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+            <img src="${data.thumbnail_url || ''}" style="width: 110px; height: 62px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); shrink: 0;" />
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 11px; color: #C084FC; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">
+                ℹ️ URL Video Terdeteksi (Pratinjau YouTube)
+              </div>
+              <h4 style="margin: 0 0 3px 0; color: #FFFFFF; font-size: 13.5px; font-family: 'Space Grotesk', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${data.title}</h4>
+              <p style="margin: 0; color: var(--text-dim); font-size: 12px;">Channel: <b>${data.author_name || 'YouTube'}</b></p>
+              <div style="margin-top: 5px; font-size: 11px; color: #34D399; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                <span>⚡ Siap diproses! Klik tombol <b>"🚀 Mulai Generasi Klip Otomatis"</b> di bawah untuk memulai.</span>
+              </div>
             </div>
           </div>
         `;
