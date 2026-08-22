@@ -6,7 +6,7 @@ on:
 
 jobs:
   process-video:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
 
     steps:
@@ -26,17 +26,17 @@ jobs:
           cache: 'npm'
           cache-dependency-path: remotion/package.json
 
-      - name: Install System Dependencies (FFmpeg & Chromium Libs)
+      - name: Install System Dependencies (FFmpeg & Headless Libs)
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg libnss3 libatk-bridge2.0-0 libgtk-3-0 libgbm1 libasound2 libxss1 fonts-liberation xvfb
+          sudo apt-get install -y ffmpeg xvfb fonts-liberation libnss3 libatk-bridge2.0-0 libgtk-3-0 libgbm1 libasound2 libxss1 || true
 
       - name: Install Python Dependencies
         run: |
           pip install --upgrade pip
           pip install -U yt-dlp huggingface_hub requests cryptography playwright
 
-      - name: Install Playwright Browsers (for Tier 3 Stealth)
+      - name: Install Playwright Browsers (for Anti-Bot Stealth)
         run: |
           playwright install chromium || true
 
@@ -52,25 +52,13 @@ jobs:
           HF_KEYS_DATASET_REPO_ID: ${{ secrets.HF_KEYS_DATASET_REPO_ID }}
           MASTER_ENCRYPTION_KEY: ${{ secrets.MASTER_ENCRYPTION_KEY }}
         run: |
-          python pipeline/main.py \
-            --job_id "${{ github.event.client_payload.job_id }}" \
-            --user_id "${{ github.event.client_payload.user_id }}" \
-            --youtube_url "${{ github.event.client_payload.youtube_url }}" \
-            --duration_mode "${{ github.event.client_payload.duration_mode || 'standard_30_60' }}" \
-            --clip_count "${{ github.event.client_payload.clip_count || 3 }}" \
-            --crop_mode "${{ github.event.client_payload.crop_mode || 'blurred_stack' }}" \
-            --caption_style "${{ github.event.client_payload.caption_style || 'bold_yellow' }}"
+          python pipeline/main.py             --job_id "${{ github.event.client_payload.job_id }}"             --user_id "${{ github.event.client_payload.user_id }}"             --youtube_url "${{ github.event.client_payload.youtube_url }}"             --duration_mode "${{ github.event.client_payload.duration_mode || 'standard_30_60' }}"             --clip_count "${{ github.event.client_payload.clip_count || 3 }}"             --crop_mode "${{ github.event.client_payload.crop_mode || 'blurred_stack' }}"             --caption_style "${{ github.event.client_payload.caption_style || 'bold_yellow' }}"
 
-      # FAILURE TRAP: Dieksekusi jika runner mengalami OOM / Crash sistemik
+      # FAILURE TRAP: Mengunggah status error ke HF Dataset jika runner crash
       - name: System Failure Trap
         if: failure()
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_DATASET_REPO_ID: ${{ secrets.HF_DATASET_REPO_ID }}
         run: |
-          python pipeline/status.py \
-            --job_id "${{ github.event.client_payload.job_id }}" \
-            --user_id "${{ github.event.client_payload.user_id }}" \
-            --status "error" \
-            --message "Runner GitHub Actions mengalami kegagalan sistem (OOM / Timeout / Process Interrupted)." \
-            --error "GitHub Actions Runner Failure"
+          python pipeline/status.py             --job_id "${{ github.event.client_payload.job_id }}"             --user_id "${{ github.event.client_payload.user_id }}"             --status "error"             --message "Runner GitHub Actions mengalami kegagalan sistem pada runner."             --error "GitHub Actions Runner Failure"
