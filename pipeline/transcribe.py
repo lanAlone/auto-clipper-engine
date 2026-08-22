@@ -1,14 +1,16 @@
 """
-Transcribe Module (YouTube Subtitle Fallback + Groq Whisper Engine)
-Mengekstrak transkrip kata-per-kata dan segmen kalimat.
-Mendahulukan subtitle bawaan YouTube jika ada, atau menggunakan Groq Whisper-large-v3-turbo.
+Transcribe Module (YouTube Subtitle Fallback + Chunked Groq Whisper Engine)
+Mendukung transkripsi podcast panjang hingga 2-3 jam.
+Jika file audio > 20MB, otomatis dipecah menjadi chunk 20 menitan dan digabungkan
+secara mulus dengan offset timestamp per-kata yang presisi.
 """
 
 import os
 import re
 import json
+import subprocess
 import requests
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 
 
 def parse_vtt_timestamp(ts_str: str) -> float:
@@ -23,9 +25,7 @@ def parse_vtt_timestamp(ts_str: str) -> float:
 
 
 def parse_vtt_subtitles(vtt_path: str, video_id: str) -> Optional[Dict[str, Any]]:
-    """
-    Mem-parsing file WebVTT hasil unduhan yt-dlp menjadi format transcript.json standar.
-    """
+    """Mem-parsing WebVTT hasil unduhan yt-dlp menjadi transcript.json standar."""
     if not vtt_path or not os.path.exists(vtt_path):
         return None
 
@@ -33,7 +33,6 @@ def parse_vtt_subtitles(vtt_path: str, video_id: str) -> Optional[Dict[str, Any]
         with open(vtt_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # Regex untuk cue VTT: (start) --> (end) \n (text)
         cue_pattern = re.compile(
             r"((?:\d{1,2}:)?\d{2}:\d{2}\.\d{3})\s*-->\s*((?:\d{1,2}:)?\d{2}:\d{2}\.\d{3})[^\n]*\n([\s\S]*?)(?=\n\n|\n(?:\d{1,2}:)?\d{2}:\d{2}|$)"
         )
@@ -46,7 +45,6 @@ def parse_vtt_subtitles(vtt_path: str, video_id: str) -> Optional[Dict[str, Any]
         seg_id = 0
 
         for start_str, end_str, raw_text in matches:
-            # Bersihkan tag VTT seperti <c> </c> atau formatting
             clean_text = re.sub(r"<[^>]+>", "", raw_text).strip()
             clean_text = re.sub(r"\s+", " ", clean_text)
             if not clean_text:
@@ -62,7 +60,6 @@ def parse_vtt_subtitles(vtt_path: str, video_id: str) -> Optional[Dict[str, Any]
                 "text": clean_text
             })
 
-            # Buat aproksimasi word timestamps jika tidak ada tag per-kata
             seg_words = clean_text.split()
             if seg_words:
                 word_dur = (e_time - s_time) / len(seg_words)
@@ -94,82 +91,132 @@ def parse_vtt_subtitles(vtt_path: str, video_id: str) -> Optional[Dict[str, Any]
         return None
 
 
-def transcribe_with_groq(
+def split_audio_into_chunks(audio_path: str, chunk_duration_sec: int = 1200) -> List[Tuple[str, float]]:
+    """
+    Memecah audio panjang menjadi beberapa potongan 20 menit (1200s).
+    Mengembalikan list tuple: [(chunk_path, start_offset_seconds), ...]
+    """
+    out_dir = os.path.dirname(audio_path)
+    base_name = os.path.splitext(os.path.basename(audio_path))[0]
+    
+    # Ambil durasi total via ffprobe
+    probe_cmd = [
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1", audio_path
+    ]
+    try:
+        dur_out = subprocess.check_output(probe_cmd, text=True).strip()
+        total_duration = float(dur_out)
+    except Exception:
+        total_duration = 3600.0
+
+    chunks = []
+    current_start = 0.0
+    idx = 0
+
+    while current_start < total_duration:
+        chunk_file = os.path.join(out_dir, f"{base_name}_chunk_{idx:03d}.mp3")
+        split_cmd = [
+            "ffmpeg", "-y",
+            "-ss", str(current_start),
+            "-i", audio_path,
+            "-t", str(chunk_duration_sec),
+            "-c", "copy",
+            chunk_file
+        ]
+        res = subprocess.run(split_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if res.returncode == 0 and os.path.exists(chunk_file):
+            chunks.append((chunk_file, current_start))
+        idx += 1
+        current_start += chunk_duration_sec
+
+    return chunks if chunks else [(audio_path, 0.0)]
+
+
+def transcribe_single_audio_groq(
     audio_path: str,
     groq_api_key: str,
-    video_id: str
-) -> Dict[str, Any]:
-    """
-    Memanggil Groq Whisper API (whisper-large-v3-turbo) dengan format verbose_json
-    dan word/segment timestamps.
-    """
-    if not os.path.exists(audio_path):
-        raise FileNotFoundError(f"File audio tidak ditemukan di: {audio_path}")
-
-    if not groq_api_key or not groq_api_key.strip():
-        raise ValueError("API Key Groq untuk transkripsi audio tidak tersedia.")
-
+    time_offset: float = 0.0
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], float]:
+    """Mengirim satu potongan audio ke Groq Whisper API."""
     url = "https://api.groq.com/openai/v1/audio/transcriptions"
-    headers = {
-        "Authorization": f"Bearer {groq_api_key.strip()}"
-    }
+    headers = {"Authorization": f"Bearer {groq_api_key.strip()}"}
 
-    # Buka file audio 32kbps mono
     with open(audio_path, "rb") as f:
-        files = {
-            "file": (os.path.basename(audio_path), f, "audio/mp3")
-        }
+        files = {"file": (os.path.basename(audio_path), f, "audio/mp3")}
         data = {
             "model": "whisper-large-v3-turbo",
             "response_format": "verbose_json",
             "timestamp_granularities[]": ["word", "segment"]
         }
-
-        try:
-            resp = requests.post(url, headers=headers, files=files, data=data, timeout=180)
-        except requests.exceptions.Timeout:
-            raise RuntimeError("Request transkripsi audio ke Groq API timeout (>180 detik).")
+        resp = requests.post(url, headers=headers, files=files, data=data, timeout=180)
 
     if resp.status_code != 200:
         if resp.status_code in (401, 403):
-            raise RuntimeError(f"Kunci API Groq ditolak (Status {resp.status_code}). Periksa kembali kunci Groq Anda di Tab Pengaturan.")
+            raise RuntimeError(f"Kunci API Groq ditolak (Status {resp.status_code}). Periksa kembali kunci Groq Anda.")
         elif resp.status_code == 429:
-            raise RuntimeError("Kunci API Groq terkena Rate Limit kuota harian audio. Silakan tunggu beberapa menit.")
-        elif resp.status_code == 413:
-            raise RuntimeError("File audio terlalu besar (>25MB). Sistem downsampling otomatis gagal.")
+            raise RuntimeError("Kunci API Groq terkena Rate Limit audio harian.")
         else:
             raise RuntimeError(f"Groq API Transcribe error ({resp.status_code}): {resp.text[:150]}")
 
-    result_json = resp.json()
-
-    # Normalisasi format transcript
-    duration = result_json.get("duration", 0.0)
-    raw_segments = result_json.get("segments", [])
-    raw_words = result_json.get("words", [])
+    result = resp.json()
+    dur = result.get("duration", 0.0)
 
     segments = []
-    for s in raw_segments:
+    for s in result.get("segments", []):
         segments.append({
-            "id": s.get("id", len(segments)),
-            "start": round(float(s.get("start", 0.0)), 2),
-            "end": round(float(s.get("end", 0.0)), 2),
+            "start": round(float(s.get("start", 0.0)) + time_offset, 2),
+            "end": round(float(s.get("end", 0.0)) + time_offset, 2),
             "text": s.get("text", "").strip()
         })
 
     words = []
-    for w in raw_words:
+    for w in result.get("words", []):
         words.append({
             "word": w.get("word", "").strip(),
-            "start": round(float(w.get("start", 0.0)), 2),
-            "end": round(float(w.get("end", 0.0)), 2)
+            "start": round(float(w.get("start", 0.0)) + time_offset, 2),
+            "end": round(float(w.get("end", 0.0)) + time_offset, 2)
         })
+
+    return segments, words, dur
+
+
+def transcribe_with_groq(audio_path: str, groq_api_key: str, video_id: str) -> Dict[str, Any]:
+    """Transkripsi multi-chunk Groq untuk audio podcast panjang."""
+    file_size_mb = os.path.getsize(audio_path) / (1024 * 1024)
+
+    all_segments = []
+    all_words = []
+    total_duration = 0.0
+
+    if file_size_mb > 20.0:
+        print(f"[Groq Whisper] File audio besar ({file_size_mb:.1f} MB). Membagi menjadi chunk 20 menit...")
+        chunks = split_audio_into_chunks(audio_path, chunk_duration_sec=1200)
+        for idx, (c_file, offset) in enumerate(chunks):
+            print(f"[Groq Whisper] Mentranskripsi chunk #{idx+1}/{len(chunks)} (offset {offset/60:.1f}m)...")
+            segs, wrds, c_dur = transcribe_single_audio_groq(c_file, groq_api_key, time_offset=offset)
+            all_segments.extend(segs)
+            all_words.extend(wrds)
+            total_duration = max(total_duration, offset + c_dur)
+            # Bersihkan chunk temporary
+            if c_file != audio_path and os.path.exists(c_file):
+                try: os.remove(c_file)
+                except Exception: pass
+    else:
+        print(f"[Groq Whisper] Mentranskripsi audio langsung ({file_size_mb:.1f} MB)...")
+        segs, wrds, total_duration = transcribe_single_audio_groq(audio_path, groq_api_key, time_offset=0.0)
+        all_segments.extend(segs)
+        all_words.extend(wrds)
+
+    for i, s in enumerate(all_segments):
+        s["id"] = i
 
     return {
         "video_id": video_id,
-        "duration_sec": duration,
+        "duration_sec": total_duration,
         "source": "groq_whisper_large_v3_turbo",
-        "words": words,
-        "segments": segments
+        "words": all_words,
+        "segments": all_segments
     }
 
 
@@ -179,15 +226,13 @@ def transcribe(
     video_id: str,
     vtt_sub_path: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Entry point transkripsi: Coba subtitle native YouTube dulu, jika tidak ada baru gunakan Groq.
-    """
+    """Entry point transkripsi: Coba subtitle native YouTube dulu (0 biaya), jika tidak ada baru gunakan Groq."""
     if vtt_sub_path:
         print("[Transcribe] Mencoba mengekstrak subtitle YouTube native...")
         sub_data = parse_vtt_subtitles(vtt_sub_path, video_id)
         if sub_data and len(sub_data.get("segments", [])) > 5:
-            print(f"[Transcribe] Berhasil menggunakan subtitle YouTube ({len(sub_data['segments'])} segmen, 0 API cost).")
+            print(f"[Transcribe] Berhasil menggunakan subtitle YouTube ({len(sub_data['segments'])} segmen, 0 kuota Groq).")
             return sub_data
 
-    print("[Transcribe] Mengirim audio 32kbps ke Groq Whisper API...")
+    print("[Transcribe] Memulai Groq Whisper-large-v3-turbo engine...")
     return transcribe_with_groq(audio_path, groq_api_key, video_id)

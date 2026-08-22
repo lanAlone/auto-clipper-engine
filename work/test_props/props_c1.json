@@ -1,0 +1,122 @@
+{
+  "clip_id": "c1",
+  "title": "Rahasia Terbesar",
+  "source_video": "C:/Users/Kenzie kafi/.gemini/antigravity-ide/scratch/auto-clipper/auto-clipper-engine/work/media/test.mp4",
+  "start_sec": 9.85,
+  "end_sec": 24.85,
+  "duration_frames": 450,
+  "fps": 30,
+  "width": 1080,
+  "height": 1920,
+  "crop_mode": "blurred_stack",
+  "caption_style": "bold_yellow",
+  "captions": [
+    {
+      "word": "Halo",
+      "start_frame": 5,
+      "end_frame": 17,
+      "start_sec": 0.15000000000000036,
+      "end_sec": 0.5500000000000007
+    },
+    {
+      "word": "teman-teman",
+      "start_frame": 18,
+      "end_frame": 40,
+      "start_sec": 0.5999999999999996,
+      "end_sec": 1.3499999999999996
+    },
+    {
+      "word": "hari",
+      "start_frame": 42,
+      "end_frame": 52,
+      "start_sec": 1.4000000000000004,
+      "end_sec": 1.75
+    },
+    {
+      "word": "ini",
+      "start_frame": 54,
+      "end_frame": 62,
+      "start_sec": 1.8000000000000007,
+      "end_sec": 2.0500000000000007
+    },
+    {
+      "word": "kita",
+      "start_frame": 65,
+      "end_frame": 74,
+      "start_sec": 2.1500000000000004,
+      "end_sec": 2.450000000000001
+    },
+    {
+      "word": "akan",
+      "start_frame": 75,
+      "end_frame": 85,
+      "start_sec": 2.5,
+      "end_sec": 2.8499999999999996
+    },
+    {
+      "word": "bahas",
+      "start_frame": 87,
+      "end_frame": 98,
+      "start_sec": 2.9000000000000004,
+      "end_sec": 3.25
+    },
+    {
+      "word": "rahasia",
+      "start_frame": 99,
+      "end_frame": 119,
+      "start_sec": 3.3000000000000007,
+      "end_sec": 3.950000000000001
+    },
+    {
+      "word": "terbesar.",
+      "start_frame": 120,
+      "end_frame": 140,
+      "start_sec": 4.0,
+      "end_sec": 4.65
+    }
+  ],
+  "speech_ranges": [
+    {
+      "start_frame": 5,
+      "end_frame": 17
+    },
+    {
+      "start_frame": 18,
+      "end_frame": 40
+    },
+    {
+      "start_frame": 42,
+      "end_frame": 52
+    },
+    {
+      "start_frame": 54,
+      "end_frame": 62
+    },
+    {
+      "start_frame": 65,
+      "end_frame": 74
+    },
+    {
+      "start_frame": 75,
+      "end_frame": 85
+    },
+    {
+      "start_frame": 87,
+      "end_frame": 98
+    },
+    {
+      "start_frame": 99,
+      "end_frame": 119
+    },
+    {
+      "start_frame": 120,
+      "end_frame": 140
+    }
+  ],
+  "backsound": {
+    "file": null,
+    "volume_base": 0.14,
+    "duck_to": 0.03
+  },
+  "sfx_cues": []
+}

@@ -10,7 +10,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from pipeline.llm_router import call_llm_json
 
 
-def format_transcript_for_llm(transcript_dict: Dict[str, Any], max_char_limit: int = 40000) -> str:
+def format_transcript_for_llm(transcript_dict: Dict[str, Any], max_char_limit: int = 250000) -> str:
     """
     Mengubah array segmen transkrip menjadi teks ringkas ber-timestamp [MM:SS]
     untuk menghemat token input LLM secara signifikan.

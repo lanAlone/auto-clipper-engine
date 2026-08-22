@@ -727,51 +727,58 @@
             </div>
           </div>
 
-          <!-- TAB 3: 🛡️ BRANKAS COOKIE YOUTUBE -->
+          <!-- TAB 3: 🛡️ AKSES YOUTUBE & ANTI-BOT (1-KLIK HELPER) -->
           <div id="dash-cookie" class="dash-tab-pane" style="display: none;">
             <div class="chunk-card spotlight-card">
-              <h3 style="font-size: 18px; color: #FFFFFF; margin-bottom: 6px;">Brankas Cookie Sesi YouTube (Anti-Blokir)</h3>
-              <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Bypass pembatasan usia dan filter bot otomatis pada video tertentu.</p>
-
-              <div class="form-group">
-                <label class="form-label">Teks Cookie Format Netscape:</label>
-                <textarea id="cookie-input" class="form-control" rows="4" placeholder="# Netscape HTTP Cookie File..."></textarea>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                  <h3 style="font-size: 18px; color: #FFFFFF; margin-bottom: 4px;">Akses YouTube & Bypass Anti-Bot</h3>
+                  <p style="color: var(--text-muted); font-size: 13.5px;">Sistem secara otomatis menggunakan 4-Tier Stealth Android & TV Engine. Jika video berstatus 18+ atau private, aktifkan cookie sesi di bawah.</p>
+                </div>
+                <div id="cookie-status-badge" style="background: rgba(52, 211, 153, 0.12); border: 1px solid rgba(52, 211, 153, 0.35); color: #34D399; font-size: 11.5px; font-weight: 700; padding: 4px 12px; border-radius: 9999px;">
+                  🟢 4-Tier Stealth Engine Aktif
+                </div>
               </div>
 
-              <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                <button class="btn btn-primary" onclick="app.saveCookie()">Simpan Cookie</button>
+              <!-- 1-Click Cookie Extractor Assistant Box -->
+              <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: 16px; padding: 20px; margin-bottom: 22px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                  <span style="font-size: 13.5px; font-weight: 700; color: #FFFFFF; display: flex; align-items: center; gap: 6px;">
+                    ⚡ Ekstraktor Cookie 1-Klik (Super Cepat):
+                  </span>
+                  <button class="btn btn-primary" style="font-size: 12.5px; padding: 7px 14px;" onclick="app.copyExtractorScript()">
+                    📋 Salin Skrip Ekstraktor (1-Detik)
+                  </button>
+                </div>
+                <ol style="color: #CBD5E1; font-size: 12.5px; padding-left: 18px; margin: 0; line-height: 1.7;">
+                  <li>Buka tab <a href="https://www.youtube.com" target="_blank" style="color: #C084FC; font-weight: 700; text-decoration: underline;">YouTube.com</a> di browser Anda.</li>
+                  <li>Buka Developer Console (Tekan <b>F12</b> atau <b>Ctrl+Shift+I</b> lalu klik tab <b>Console</b>).</li>
+                  <li>Paste skrip yang telah disalin, lalu tekan <b>Enter</b>. Cookie otomatis tersalin ke Clipboard!</li>
+                  <li>Kembali ke tab ini dan klik tombol <b>"Tempel & Simpan Otomatis"</b> di bawah.</li>
+                </ol>
+              </div>
+
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <label class="form-label" style="margin-bottom: 0;">Universal Cookie Box (Format Netscape / JSON / Header):</label>
+                  <button type="button" class="btn btn-outline" style="font-size: 11.5px; padding: 4px 10px;" onclick="app.pasteClipboardCookie()">
+                    📋 Tempel dari Clipboard
+                  </button>
+                </div>
+                <textarea id="cookie-input" class="form-control" rows="5" placeholder="# Netscape HTTP Cookie File / Raw Cookie String..."></textarea>
+              </div>
+
+              <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="app.saveCookie()">✓ Simpan & Verifikasi Cookie</button>
                 <button class="btn btn-outline" onclick="app.deleteCookie()">Hapus Cookie</button>
               </div>
 
               <div id="cookie-feedback-msg"></div>
             </div>
           </div>
+          </div>
 
-          <!-- TAB 4: ✍️ BRAND VOICE & MEDSOS -->
-          <div id="dash-brand" class="dash-tab-pane" style="display: none;">
-            <div class="chunk-card spotlight-card">
-              <h3 style="font-size: 18px; color: #FFFFFF; margin-bottom: 6px;">Brand Voice & Personalisasi Konten</h3>
-              <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Sesuaikan kepribadian dan gaya bahasa AI saat memilih klip dan membuat caption.</p>
-
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-                <input type="text" id="brand-niche" class="form-control" placeholder="Niche (Edukasi Finansial / Bisnis / Teknologi)" />
-                <input type="text" id="brand-tone" class="form-control" placeholder="Tone of Voice (Santai, to the point, mendidik)" />
-              </div>
-              <button class="btn btn-primary" style="margin-bottom: 24px;" onclick="app.saveBrandVoice()">Simpan Preferensi Brand Voice</button>
-
-              <hr style="border-color: var(--border-subtle); margin-bottom: 24px;" />
-
-              <h3 style="font-size: 18px; color: #FFFFFF; margin-bottom: 6px;">Generator Distribusi Media Sosial</h3>
-              <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 18px;">Buat 5 varian hook viral dan rekomendasi jam posting terbaik untuk klip Anda.</p>
-
-              <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-                <input type="text" id="content-video-id" class="form-control" placeholder="ID Video yang Diproses (contoh: job123)" />
-                <button class="btn btn-primary" onclick="app.generateHooks()">Buat 5 Hook</button>
-                <button class="btn btn-outline" onclick="app.generateSchedule()">Jadwal Posting</button>
-              </div>
-
-              <div id="content-result-area"></div>
-            </div>
+          
           </div>
 
           <!-- TAB 5: 💬 BANTUAN & LAPOR -->

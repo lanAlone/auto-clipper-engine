@@ -1,7 +1,6 @@
 """
-Main Pipeline Orchestrator (GitHub Actions Engine Entrypoint)
-Menjalankan seluruh alur pemrosesan video dari download, transkrip, deteksi highlight,
-Remotion render, hingga upload hasil dengan penanganan error komprehensif.
+Main Pipeline Orchestrator (Lightweight Two-Phase Architecture)
+Mendukung podcast 1-3 jam dengan performa tinggi & hemat resource runner.
 """
 
 import os
@@ -10,11 +9,11 @@ import argparse
 import traceback
 
 from pipeline.status import update_status
-from pipeline.download import download_video
+from pipeline.download import download_audio_and_subtitles, download_clip_section
 from pipeline.fetch_user_key import get_user_key
 from pipeline.transcribe import transcribe
 from pipeline.detect_highlights import detect_highlights
-from pipeline.prep_render_props import build_all_render_props
+from pipeline.prep_render_props import build_clip_render_props
 from pipeline.render import render_clip
 from pipeline.upload import upload_all_results
 from pipeline.cache import (
@@ -44,22 +43,21 @@ def main():
 
     try:
         # ----------------------------------------------------------------------
-        # STAGE 1: DOWNLOAD VIDEO & EXTRACT AUDIO (4-TIER STEALTH)
+        # STAGE 1: EKSTRAKSI AUDIO & SUBTITLE CEPAT (FASE 1)
         # ----------------------------------------------------------------------
-        update_status(job_id, user_id, "downloading", "Mengunduh video dengan perlindungan 4-Tier Stealth...")
-        video_path, audio_path, video_id, duration_sec, vtt_path = download_video(
+        update_status(job_id, user_id, "downloading", "Mengambil audio podcast & memeriksa subtitle YouTube...")
+        audio_path, video_id, duration_sec, vtt_path = download_audio_and_subtitles(
             url=url,
             user_id=user_id,
             output_dir="work/media"
         )
-        print(f"[Pipeline] Video ID: {video_id} ({duration_sec:.1f}s)")
+        print(f"[Pipeline] Video ID: {video_id} (Durasi: {duration_sec/60:.1f} menit)")
 
         # ----------------------------------------------------------------------
-        # STAGE 2: TRANSKRIPSI (CACHE / SUBTITLES / GROQ WHISPER)
+        # STAGE 2: TRANSKRIPSI AUDIO / CACHE / SUBTITLE
         # ----------------------------------------------------------------------
-        update_status(job_id, user_id, "transcribing", "Mengekstrak transkrip kata-per-kata...", video_id=video_id)
+        update_status(job_id, user_id, "transcribing", "Menganalisis transkrip percakapan kata-per-kata...", video_id=video_id)
         
-        # Cek Cache
         cached_trans = get_cached_transcript(video_id, public_repo_id, hf_token)
         if cached_trans:
             print("[Pipeline] Transkrip ditemukan di cache dataset publik.")
@@ -75,9 +73,9 @@ def main():
             save_cached_transcript(video_id, transcript_dict, public_repo_id, hf_token)
 
         # ----------------------------------------------------------------------
-        # STAGE 3: DETEKSI HIGHLIGHT MOMEN (LLM ROTATION + WORD SNAPPING)
+        # STAGE 3: DETEKSI MOMEN HIGHLIGHT TERBAIK (LLM ROTATION)
         # ----------------------------------------------------------------------
-        update_status(job_id, user_id, "detecting", "Mendeteksi momen emas terbaik dengan rotasi AI...", video_id=video_id)
+        update_status(job_id, user_id, "detecting", "Mendeteksi momen viral & hook terbaik dengan AI...", video_id=video_id)
         
         cached_clips = get_cached_clips(video_id, public_repo_id, hf_token)
         if cached_clips and len(cached_clips.get("candidates", [])) >= args.clip_count:
@@ -94,47 +92,69 @@ def main():
             save_cached_clips(video_id, clips_dict, public_repo_id, hf_token)
 
         # ----------------------------------------------------------------------
-        # STAGE 4: PERSIAPAN REMOTION RENDER PROPS
+        # STAGE 4 & 5: SELECTIVE CLIP DOWNLOAD & REMOTION RENDERING (FASE 2)
         # ----------------------------------------------------------------------
-        update_status(job_id, user_id, "preparing", "Menyiapkan komposisi video 9:16...", video_id=video_id, llm_used=llm_used)
-        props_files = build_all_render_props(
-            transcript_dict=transcript_dict,
-            clips_dict=clips_dict,
-            source_video_path=video_path,
-            output_dir="work/render_props",
-            crop_mode=args.crop_mode,
-            caption_style=args.caption_style
+        candidates = clips_dict.get("candidates", [])[:args.clip_count]
+        rendered_clips = []
+        words = transcript_dict.get("words", [])
+
+        update_status(
+            job_id, user_id, "rendering",
+            f"Merender {len(candidates)} klip vertikal berkualitas tinggi...",
+            video_id=video_id,
+            llm_used=llm_used
         )
 
-        # ----------------------------------------------------------------------
-        # STAGE 5: RENDERING REMOTION (SEQUENTIAL & CONCURRENCY=1)
-        # ----------------------------------------------------------------------
-        update_status(job_id, user_id, "rendering", f"Merender {len(props_files)} klip vertikal...", video_id=video_id, llm_used=llm_used)
-        rendered_clips = []
-        candidates = clips_dict.get("candidates", [])
-
-        for idx, (p_file, c_data) in enumerate(zip(props_files, candidates)):
+        for idx, c_data in enumerate(candidates):
             cid = c_data["clip_id"]
+            c_start = float(c_data["start"])
+            c_end = float(c_data["end"])
+            
+            print(f"[Pipeline] Memproses Klip #{idx+1}/{len(candidates)} ({cid}) [Rentang: {c_start:.1f}s - {c_end:.1f}s]...")
+
+            # 1. Download potongan klip saja
+            section_video_path = download_clip_section(
+                url=url,
+                user_id=user_id,
+                clip_id=cid,
+                start_sec=c_start,
+                end_sec=c_end,
+                output_dir="work/media"
+            )
+
+            # 2. Siapkan Props Remotion untuk klip ini
+            # Karena video sudah dipotong pas, durasi klip diukur dari 0 sampai (c_end - c_start)
+            props_file = build_clip_render_props(
+                clip=c_data,
+                transcript_words=words,
+                source_video_path=section_video_path,
+                output_dir="work/render_props",
+                crop_mode=args.crop_mode,
+                caption_style=args.caption_style
+            )
+
+            # 3. Render Klip dengan Remotion CLI
             out_mp4 = f"work/output/{cid}.mp4"
-            print(f"[Pipeline] Rendering Klip #{idx+1}/{len(props_files)} ({cid})...")
+            os.makedirs("work/output", exist_ok=True)
             render_clip(
-                props_json_path=p_file,
+                props_json_path=props_file,
                 output_mp4_path=out_mp4,
                 remotion_dir="remotion"
             )
+
             rendered_clips.append({
                 "clip_id": cid,
                 "title": c_data.get("title", f"Klip {cid}"),
-                "duration": c_data.get("duration", 30.0),
+                "duration": c_data.get("duration", round(c_end - c_start, 1)),
                 "mp4_path": out_mp4,
                 "hook_reason": c_data.get("hook_reason", ""),
                 "viral_score": c_data.get("viral_score", 8.5)
             })
 
         # ----------------------------------------------------------------------
-        # STAGE 6: UPLOAD HASIL KE HUGGING FACE DATASET
+        # STAGE 6: UPLOAD HASIL KE CLOUD DATASET
         # ----------------------------------------------------------------------
-        update_status(job_id, user_id, "uploading", "Mengunggah file video hasil ke cloud storage...", video_id=video_id, llm_used=llm_used)
+        update_status(job_id, user_id, "uploading", "Mengunggah video klip hasil ke cloud storage...", video_id=video_id, llm_used=llm_used)
         uploaded_results = upload_all_results(
             video_id=video_id,
             rendered_clips=rendered_clips,
@@ -143,18 +163,18 @@ def main():
         )
 
         # ----------------------------------------------------------------------
-        # STAGE 7: DONE!
+        # STAGE 7: SELESAI
         # ----------------------------------------------------------------------
         update_status(
             job_id=job_id,
             user_id=user_id,
             status="done",
-            message=f"Sukses! {len(uploaded_results)} klip vertikal siap dipublikasikan.",
+            message=f"Selesai! {len(uploaded_results)} klip 9:16 siap diunduh dan diposting.",
             video_id=video_id,
             clips=uploaded_results,
             llm_used=llm_used
         )
-        print(f"=== Pipeline Selesai Sukses: Job {job_id} ===")
+        print(f"=== Pipeline Berhasil Tuntas: Job {job_id} ===")
 
     except Exception as e:
         err_detail = str(e)

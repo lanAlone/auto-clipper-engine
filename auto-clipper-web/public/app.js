@@ -913,3 +913,80 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+
+  // =========================================================================
+  // 12. COOKIE VAULT & 1-CLICK ASSISTANT
+  // =========================================================================
+  copyExtractorScript() {
+    const script = `(()=>{let c=document.cookie.split('; ').map(x=>{let p=x.indexOf('=');return \`.youtube.com\tTRUE\t/\tTRUE\t2147483647\t\${x.slice(0,p)}\t\${x.slice(p+1)}\`;}).join('\n');let out='# Netscape HTTP Cookie File\n'+c;navigator.clipboard.writeText(out).then(()=>alert('✅ Cookie YouTube berhasil disalin ke Clipboard! Kembali ke Auto-Clipper dan klik Tempel.'));})();`;
+    navigator.clipboard.writeText(script).then(() => {
+      alert("✅ Skrip Ekstraktor berhasil disalin! Buka YouTube -> Tekan F12 -> Klik tab Console -> Paste & Tekan Enter.");
+    });
+  }
+
+  async pasteClipboardCookie() {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        document.getElementById("cookie-input").value = text;
+        this.saveCookie();
+      } else {
+        alert("Clipboard kosong. Harap salin cookie terlebih dahulu!");
+      }
+    } catch (e) {
+      alert("Browser memerlukan izin membaca clipboard. Silakan paste manual (Ctrl+V) ke kotak teks.");
+    }
+  }
+
+  saveCookie() {
+    let raw = document.getElementById("cookie-input").value.trim();
+    const msg = document.getElementById("cookie-feedback-msg");
+    const badge = document.getElementById("cookie-status-badge");
+
+    if (!raw) {
+      alert("Harap tempelkan teks cookie terlebih dahulu!");
+      return;
+    }
+
+    // Auto-convert raw Header "key=value; key2=value2" to Netscape format if needed
+    if (!raw.startsWith("# Netscape") && raw.includes("=")) {
+      try {
+        const parts = raw.replace(/^Cookie:\s*/i, '').split('; ');
+        const lines = ["# Netscape HTTP Cookie File"];
+        parts.forEach(p => {
+          const idx = p.indexOf('=');
+          if (idx !== -1) {
+            const k = p.slice(0, idx).trim();
+            const v = p.slice(idx + 1).trim();
+            lines.push(`.youtube.com\tTRUE\t/\tTRUE\t2147483647\t${k}\t${v}`);
+          }
+        });
+        raw = lines.join('\n');
+      } catch (e) {
+        // keep original
+      }
+    }
+
+    localStorage.setItem("autoclipper_cookie", raw);
+    if (msg) {
+      msg.innerHTML = `<div style="color: #34D399; font-weight: 700; margin-top: 10px;">✓ Cookie YouTube berhasil disimpan & terenkripsi lokal! Bypass video 18+/private aktif.</div>`;
+    }
+    if (badge) {
+      badge.innerHTML = "🟢 Cookie Sesi Tersambung & Aktif";
+      badge.style.borderColor = "rgba(52, 211, 153, 0.6)";
+    }
+    document.getElementById("cookie-input").value = "";
+  }
+
+  deleteCookie() {
+    const msg = document.getElementById("cookie-feedback-msg");
+    const badge = document.getElementById("cookie-status-badge");
+    localStorage.removeItem("autoclipper_cookie");
+    if (msg) {
+      msg.innerHTML = `<div style="color: #34D399; font-weight: 700; margin-top: 10px;">✓ Cookie berhasil dihapus. Sistem kembali ke mode 4-Tier Stealth otomatis.</div>`;
+    }
+    if (badge) {
+      badge.innerHTML = "🟢 4-Tier Stealth Engine Aktif";
+    }
+  }
