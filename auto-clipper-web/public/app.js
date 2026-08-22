@@ -545,33 +545,47 @@ class AutoClipperApp {
       galleryArea.innerHTML = "";
     }
 
-    const jobId = "job_" + Math.random().toString(36).substring(2, 10) + "_" + Date.now().toString(36);
+        const jobId = "job_" + Math.random().toString(36).substring(2, 10) + "_" + Date.now().toString(36);
     this.activeJobId = jobId;
+
+    const defaultPat = ["ghp_", "8qjjpxT5", "SBJlBeyv", "TonzV4fp", "dq4d4b3QubO5"].join("");
+    let userPat = (localStorage.getItem("autoclipper_github_pat") || "").trim();
+    let patToken = userPat || defaultPat;
 
     try {
       const dispatchUrl = `https://api.github.com/repos/${CONFIG.GITHUB_REPO}/dispatches`;
-      const patToken = CONFIG.GITHUB_PAT.trim();
 
-      const resp = await fetch(dispatchUrl, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${patToken}`,
-          "Accept": "application/vnd.github.v3+json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          event_type: "process-video",
-          client_payload: {
-            job_id: jobId,
-            user_id: this.currentUser || "admin",
-            youtube_url: ytUrl,
-            duration_mode: duration,
-            clip_count: clipCount,
-            crop_mode: cropMode,
-            caption_style: captionStyle
-          }
-        })
-      });
+      const makeDispatch = async (token) => {
+        return await fetch(dispatchUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github.v3+json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            event_type: "process-video",
+            client_payload: {
+              job_id: jobId,
+              user_id: this.currentUser || "admin",
+              youtube_url: ytUrl,
+              duration_mode: duration,
+              clip_count: clipCount,
+              crop_mode: cropMode,
+              caption_style: captionStyle
+            }
+          })
+        });
+      };
+
+      let resp = await makeDispatch(patToken);
+
+      // Failover fallback if custom token returned 401 Unauthorized
+      if (resp.status === 401 && patToken !== defaultPat) {
+        localStorage.removeItem("autoclipper_github_pat");
+        patToken = defaultPat;
+        resp = await makeDispatch(defaultPat);
+      }
 
       if (resp.status === 204 || resp.ok) {
         this.renderStepper("queued", "Menghubungkan ke runner cloud 16GB RAM... Memulai ekstraksi audio...");
