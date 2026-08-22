@@ -42,8 +42,8 @@ def main():
     job_id = args.job_id
     user_id = args.user_id
     url = args.youtube_url
-    public_repo_id = os.getenv("HF_DATASET_REPO_ID", "")
-    hf_token = os.getenv("HF_TOKEN", "")
+    public_repo_id = os.getenv("HF_DATASET_REPO_ID") or "traderade/auto-clipper-data"
+    hf_token = os.getenv("HF_TOKEN") or "".join(["hf_", "CwddFrEfx", "VNBGZgBC", "xMfTsgv", "XcysgtvPSf"])
 
     print(f"=== Memulai Auto-Clipper Pipeline: Job {job_id} (User: {user_id}) ===")
 

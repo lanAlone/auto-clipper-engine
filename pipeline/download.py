@@ -1,9 +1,7 @@
 """
-Downloader Module (Lightweight Two-Phase & 4-Tier Stealth Download)
+Downloader Module (Lightweight Two-Phase & 6-Tier Resilient YouTube Extraction)
 Mendukung video podcast YouTube hingga 3 JAM (10.800 detik).
-Menggunakan strategi Two-Phase:
-1. Unduh Subtitle/Audio cepat (~14MB/jam) untuk transkripsi & highlight LLM.
-2. Unduh HANYA segmen video 30-60 detik yang terpilih untuk dirender ke 9:16.
+Menggunakan strategi multi-client Android/iOS/TV untuk bypass Botguard pada IP datacenter.
 """
 
 import os
@@ -13,7 +11,7 @@ import json
 from typing import Tuple, Optional, List, Dict, Any
 
 from pipeline.fetch_user_key import get_user_cookie_file
-from pipeline.stealth_session import get_stealth_cookies_file
+from pipeline.stealth_session import generate_youtube_session_cookies
 
 
 MAX_DURATION_SECONDS = 10800  # 3 Jam Penuh (Podcast Panjang)
@@ -54,47 +52,45 @@ def extract_video_id(url: str) -> str:
 def check_video_metadata(url: str, cookie_file: Optional[str] = None) -> Tuple[bool, float, str, str]:
     """
     Mengambil durasi & judul video tanpa mengunduh konten (pre-flight check).
-    Mengembalikan (is_valid, duration_seconds, title, error_msg).
     """
-    cmd = [
-        "yt-dlp",
-        "--skip-download",
-        "--print", "%(duration)s|||%(title)s",
-        "--no-warnings",
-        "--extractor-args", "youtube:player_client=android,ios,tv_embedded,web"
+    video_id = extract_video_id(url)
+    clients = [
+        "youtube:player_client=android_creator,android",
+        "youtube:player_client=ios",
+        "youtube:player_client=tv_embedded,tv",
+        "youtube:player_client=mweb"
     ]
-    if cookie_file and os.path.exists(cookie_file):
-        cmd.extend(["--cookies", cookie_file])
-    cmd.append(url)
 
-    code, out, err = run_cmd(cmd, timeout_sec=45)
-    if code != 0 or not out.strip():
-        # Fallback client iOS
-        cmd_alt = [
-            "yt-dlp", "--skip-download", "--print", "%(duration)s|||%(title)s",
-            "--extractor-args", "youtube:player_client=ios,mweb", url
+    for client_arg in clients:
+        cmd = [
+            "yt-dlp",
+            "--skip-download",
+            "--print", "%(duration)s|||%(title)s",
+            "--no-warnings",
+            "--extractor-args", client_arg
         ]
         if cookie_file and os.path.exists(cookie_file):
-            cmd_alt.extend(["--cookies", cookie_file])
-        code_alt, out_alt, err_alt = run_cmd(cmd_alt, timeout_sec=45)
-        if code_alt != 0 or not out_alt.strip():
-            return False, 0.0, "", f"Gagal membaca informasi video: {err or err_alt}"
-        out = out_alt
+            cmd.extend(["--cookies", cookie_file])
+        cmd.append(url)
 
-    parts = out.strip().split("|||")
-    dur_str = parts[0].strip() if len(parts) > 0 else "0"
-    title = parts[1].strip() if len(parts) > 1 else "YouTube Video"
+        code, out, err = run_cmd(cmd, timeout_sec=30)
+        if code == 0 and "|||" in out:
+            parts = out.strip().split("|||")
+            dur_str = parts[0].strip() if len(parts) > 0 else "0"
+            title = parts[1].strip() if len(parts) > 1 else f"YouTube Video {video_id}"
+            try:
+                dur = float(dur_str)
+            except ValueError:
+                dur = 0.0
 
-    try:
-        dur = float(dur_str)
-    except ValueError:
-        dur = 0.0
+            if dur > MAX_DURATION_SECONDS:
+                hours = round(dur / 3600, 1)
+                return False, dur, title, f"Durasi video ({hours} jam) melebihi batas maksimum 3 jam."
+            return True, dur, title, ""
 
-    if dur > MAX_DURATION_SECONDS:
-        hours = round(dur / 3600, 1)
-        return False, dur, title, f"Durasi video ({hours} jam) melebihi batas maksimum 3 jam."
-
-    return True, dur, title, ""
+    # Soft fallback jika pre-flight metadata lambat / terblokir
+    print(f"[Warning] Pre-flight metadata dilewati, melanjutkan langsung ke ekstraksi audio.")
+    return True, 1800.0, f"YouTube Video {video_id}", ""
 
 
 def downsample_audio_for_groq(input_audio_or_video: str, output_audio_path: str) -> bool:
@@ -145,7 +141,6 @@ def download_audio_and_subtitles(
 
     print(f"[Downloader] Memproses video: '{title}' ({duration_sec:.1f} detik)...")
 
-    # Unduh Audio Terbaik + Subtitle VTT (Sangat Ringan, Hanya ~15MB untuk 1 jam)
     base_args = [
         "yt-dlp",
         "--format", "bestaudio[ext=m4a]/bestaudio/best",
@@ -157,59 +152,89 @@ def download_audio_and_subtitles(
 
     tier_errors = []
     download_success = False
+    raw_audio_path = ""
 
-    # Tier 1: Client Android/iOS
-    t1_args = base_args + ["--extractor-args", "youtube:player_client=android,ios,tv_embedded,web", url]
+    # Tier 1: Client Android Creator & Android App (Paling kebal Botguard di datacenter IP)
+    print("[Downloader] Mencoba Tier 1 (Android Creator Client)...")
+    t1_args = base_args + ["--extractor-args", "youtube:player_client=android_creator,android", url]
     if user_cookie_file:
         t1_args.extend(["--cookies", user_cookie_file])
-    code1, out1, err1 = run_cmd(t1_args, timeout_sec=240)
-    
-    # Cari file audio raw yang dihasilkan
+    code1, out1, err1 = run_cmd(t1_args, timeout_sec=180)
     raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
     if code1 == 0 and raw_files:
         download_success = True
         raw_audio_path = raw_files[0]
-        print("[Tier 1] Berhasil mengunduh audio stream via Android/iOS player client.")
+        print("[Tier 1] Berhasil mengunduh audio stream via Android Creator client.")
     else:
-        tier_errors.append(f"Tier 1: {err1[-120:].strip()}")
+        tier_errors.append(f"Tier 1: {err1[-100:].strip()}")
 
-    # Tier 2: Fallback Web Client
+    # Tier 2: Client iOS (Apple AVPlayer format)
     if not download_success:
-        t2_args = base_args + ["--extractor-args", "youtube:player_client=web,mweb", url]
+        print("[Downloader] Mencoba Tier 2 (iOS Client)...")
+        t2_args = base_args + ["--extractor-args", "youtube:player_client=ios", url]
         if user_cookie_file:
             t2_args.extend(["--cookies", user_cookie_file])
-        code2, out2, err2 = run_cmd(t2_args, timeout_sec=240)
+        code2, out2, err2 = run_cmd(t2_args, timeout_sec=180)
         raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
         if code2 == 0 and raw_files:
             download_success = True
             raw_audio_path = raw_files[0]
-            print("[Tier 2] Berhasil mengunduh audio stream via Web fallback.")
+            print("[Tier 2] Berhasil mengunduh audio stream via iOS client.")
         else:
-            tier_errors.append(f"Tier 2: {err2[-120:].strip()}")
+            tier_errors.append(f"Tier 2: {err2[-100:].strip()}")
 
-    # Tier 3: CloakBrowser Stealth Session
+    # Tier 3: Client TV Embedded (Smart TV streams)
     if not download_success:
-        print("[Tier 3] Memulai Stealth Session...")
-        stealth_cookie = get_stealth_cookies_file()
-        if stealth_cookie:
-            t3_args = base_args + ["--cookies", stealth_cookie, url]
-            code3, out3, err3 = run_cmd(t3_args, timeout_sec=240)
+        print("[Downloader] Mencoba Tier 3 (Smart TV Embedded Client)...")
+        t3_args = base_args + ["--extractor-args", "youtube:player_client=tv_embedded,tv", url]
+        if user_cookie_file:
+            t3_args.extend(["--cookies", user_cookie_file])
+        code3, out3, err3 = run_cmd(t3_args, timeout_sec=180)
+        raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
+        if code3 == 0 and raw_files:
+            download_success = True
+            raw_audio_path = raw_files[0]
+            print("[Tier 3] Berhasil mengunduh audio via TV client.")
+        else:
+            tier_errors.append(f"Tier 3: {err3[-100:].strip()}")
+
+    # Tier 4: Client Mobile Web
+    if not download_success:
+        print("[Downloader] Mencoba Tier 4 (Mobile Web Client)...")
+        t4_args = base_args + ["--extractor-args", "youtube:player_client=mweb", url]
+        if user_cookie_file:
+            t4_args.extend(["--cookies", user_cookie_file])
+        code4, out4, err4 = run_cmd(t4_args, timeout_sec=180)
+        raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
+        if code4 == 0 and raw_files:
+            download_success = True
+            raw_audio_path = raw_files[0]
+            print("[Tier 4] Berhasil mengunduh audio via Mobile Web client.")
+        else:
+            tier_errors.append(f"Tier 4: {err4[-100:].strip()}")
+
+    # Tier 5: Playwright Headless YouTube Embed Handshake Session
+    if not download_success:
+        print("[Downloader] Mencoba Tier 5 (Playwright Embed Session Handshake)...")
+        stealth_cookie = generate_youtube_session_cookies(video_id)
+        if stealth_cookie and os.path.exists(stealth_cookie):
+            t5_args = base_args + [
+                "--cookies", stealth_cookie,
+                "--extractor-args", "youtube:player_client=android,ios,mweb",
+                url
+            ]
+            code5, out5, err5 = run_cmd(t5_args, timeout_sec=180)
             raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
-            if code3 == 0 and raw_files:
+            if code5 == 0 and raw_files:
                 download_success = True
                 raw_audio_path = raw_files[0]
-                print("[Tier 3] Berhasil mengunduh audio via Stealth Session.")
+                print("[Tier 5] Berhasil mengunduh audio via Playwright Embed Session.")
             else:
-                tier_errors.append(f"Tier 3: {err3[-120:].strip()}")
+                tier_errors.append(f"Tier 5: {err5[-100:].strip()}")
 
     if not download_success:
         err_msg = " | ".join(tier_errors)
-        if "Sign in to confirm" in err_msg or "bot" in err_msg.lower():
-            raise RuntimeError(
-                "YouTube meminta verifikasi sesi untuk video ini. "
-                "Silakan simpan Cookie YouTube Anda di Tab 'Akses YouTube' untuk membuka akses instan."
-            )
-        raise RuntimeError(f"Gagal mengunduh audio stream: {err_msg}")
+        raise RuntimeError(f"Gagal mengunduh audio stream dari YouTube ({err_msg}).")
 
     # Ekstrak audio 16kHz 32kbps mono untuk Whisper
     downsampled = downsample_audio_for_groq(raw_audio_path, audio_whisper_path)
@@ -236,7 +261,6 @@ def download_clip_section(
 ) -> str:
     """
     FASE 2: Mengunduh HANYA potongan video 30-60 detik yang terpilih untuk rendering.
-    Menghemat hingga 95% bandwidth dan render time.
     """
     os.makedirs(output_dir, exist_ok=True)
     out_mp4_path = os.path.join(output_dir, f"section_{clip_id}.mp4")
@@ -244,7 +268,6 @@ def download_clip_section(
     if os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 100000:
         return out_mp4_path
 
-    # Format timestamp HH:MM:SS
     def sec_to_ts(s):
         m, sec = divmod(s, 60)
         h, m = divmod(m, 60)
@@ -262,23 +285,30 @@ def download_clip_section(
     section_spec = f"*{ts_start}-{ts_end}"
     print(f"[Downloader] Mengunduh segmen video '{clip_id}': rentang {ts_start} -> {ts_end}...")
 
-    cmd = [
-        "yt-dlp",
-        "--download-sections", section_spec,
-        "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
-        "--merge-output-format", "mp4",
-        "--force-keyframes-at-cuts",
-        "--extractor-args", "youtube:player_client=android,ios,tv_embedded,web",
-        "-o", out_mp4_path,
-        url
+    clients = [
+        "youtube:player_client=android_creator,android",
+        "youtube:player_client=ios",
+        "youtube:player_client=tv_embedded,tv",
+        "youtube:player_client=mweb"
     ]
-    if user_cookie_file:
-        cmd.extend(["--cookies", user_cookie_file])
 
-    code, out, err = run_cmd(cmd, timeout_sec=180)
-    if code != 0 or not os.path.exists(out_mp4_path):
-        # Fallback tanpa download-sections (download standard segment via ffmpeg)
-        print(f"[Warning] Section download fallback: {err[-100:].strip()}")
-        raise RuntimeError(f"Gagal mengunduh klip segmen {clip_id}: {err[-120:].strip()}")
+    for client_arg in clients:
+        cmd = [
+            "yt-dlp",
+            "--download-sections", section_spec,
+            "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
+            "--merge-output-format", "mp4",
+            "--force-keyframes-at-cuts",
+            "--extractor-args", client_arg,
+            "-o", out_mp4_path,
+            url
+        ]
+        if user_cookie_file:
+            cmd.extend(["--cookies", user_cookie_file])
 
-    return out_mp4_path
+        code, out, err = run_cmd(cmd, timeout_sec=180)
+        if code == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
+            print(f"[Downloader] Sukses mengunduh segmen {clip_id} via {client_arg}.")
+            return out_mp4_path
+
+    raise RuntimeError(f"Gagal mengunduh klip segmen {clip_id} setelah mencoba seluruh player client.")

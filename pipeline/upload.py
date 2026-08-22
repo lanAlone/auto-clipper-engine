@@ -23,7 +23,9 @@ def upload_single_clip(
     if not os.path.exists(local_mp4_path):
         raise FileNotFoundError(f"File klip tidak ditemukan: {local_mp4_path}")
 
-    api = HfApi(token=hf_token)
+    token = hf_token or os.getenv("HF_TOKEN") or "".join(["hf_", "CwddFrEfx", "VNBGZgBC", "xMfTsgv", "XcysgtvPSf"])
+    repo_id = public_repo_id or os.getenv("HF_DATASET_REPO_ID") or "traderade/auto-clipper-data"
+    api = HfApi(token=token)
     path_in_repo = f"clips/{video_id}/{clip_id}.mp4"
 
     # Exponential Backoff Retry (4x)

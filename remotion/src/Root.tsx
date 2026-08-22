@@ -12,6 +12,15 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={1080}
         height={1920}
+        calculateMetadata={({ props }) => {
+          const compProps = props as CompositionProps;
+          return {
+            durationInFrames: compProps.duration_frames || 900,
+            fps: compProps.fps || 30,
+            width: compProps.width || 1080,
+            height: compProps.height || 1920,
+          };
+        }}
         defaultProps={{
           clip_id: "c1",
           title: "Highlight Preview",
