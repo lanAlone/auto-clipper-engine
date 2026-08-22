@@ -8,6 +8,12 @@ import sys
 import argparse
 import traceback
 
+# Ensure repo root is always in sys.path
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
+
 from pipeline.status import update_status
 from pipeline.download import download_audio_and_subtitles, download_clip_section
 from pipeline.fetch_user_key import get_user_key

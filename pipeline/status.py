@@ -1,3 +1,11 @@
+import os
+import sys
+
+# Ensure repo root is in sys.path
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
 """
 Status Synchronization Module (Repo A -> Repo B via HF Dataset)
 Memperbarui file status/{job_id}.json di HF dataset publik yang di-poll oleh UI Gradio.

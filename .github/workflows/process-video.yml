@@ -47,6 +47,7 @@ jobs:
 
       - name: Execute Main Pipeline
         env:
+          PYTHONPATH: .
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_DATASET_REPO_ID: ${{ secrets.HF_DATASET_REPO_ID }}
           HF_KEYS_DATASET_REPO_ID: ${{ secrets.HF_KEYS_DATASET_REPO_ID }}
@@ -58,6 +59,7 @@ jobs:
       - name: System Failure Trap
         if: failure()
         env:
+          PYTHONPATH: .
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_DATASET_REPO_ID: ${{ secrets.HF_DATASET_REPO_ID }}
         run: |
