@@ -1054,8 +1054,13 @@ h1, h2, h3, h4, h5, .font-heading {
 }
 
 /* ==========================================================================
-   12. MODALS — Glass + Spring + Aurora Glow
+   12. MODALS — Glass + Spring + Aurora Glow (Fixed Scrolling & Responsive)
    ========================================================================== */
+body.modal-open {
+  overflow: hidden !important;
+  touch-action: none;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1070,6 +1075,10 @@ h1, h2, h3, h4, h5, .font-heading {
   justify-content: center;
   z-index: 2000;
   opacity: 0;
+  padding: 24px 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   transition: opacity 0.3s ease;
 }
 
@@ -1082,45 +1091,76 @@ h1, h2, h3, h4, h5, .font-heading {
   background: rgba(10, 12, 22, 0.98);
   border: 1px solid rgba(167, 139, 250, 0.25);
   border-radius: 24px;
-  padding: 36px;
+  padding: 32px 28px;
   max-width: 480px;
-  width: 90%;
+  width: 100%;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   box-shadow:
     0 32px 100px rgba(0, 0, 0, 0.9),
     0 0 60px rgba(129, 140, 248, 0.15),
     0 0 100px rgba(244, 114, 182, 0.06),
     var(--specular-top);
   position: relative;
+  margin: auto;
   transform: scale(0.92) translateY(16px);
   transition: transform 0.4s var(--spring-bounce);
+}
+
+/* Custom scrollbar inside modal-card */
+.modal-card::-webkit-scrollbar {
+  width: 5px;
+}
+.modal-card::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+.modal-card::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.3);
+  border-radius: 4px;
+}
+.modal-card::-webkit-scrollbar-thumb:hover {
+  background: rgba(167, 139, 250, 0.6);
 }
 
 .modal-overlay.active .modal-card {
   transform: scale(1) translateY(0);
 }
 
+.modal-header-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -10px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
 .modal-close {
   position: absolute;
-  top: 18px;
-  right: 18px;
-  background: transparent;
-  border: none;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--text-muted);
-  font-size: 22px;
+  font-size: 20px;
   cursor: pointer;
-  transition: color 0.2s ease, transform 0.2s var(--spring-bounce);
-  width: 32px;
-  height: 32px;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.2s var(--spring-bounce);
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 10px;
+  z-index: 25;
 }
 
 .modal-close:hover {
   color: #FFFFFF;
-  background: rgba(255,255,255,0.06);
-  transform: scale(1.1);
+  background: rgba(244, 63, 94, 0.25);
+  border-color: rgba(244, 63, 94, 0.5);
+  transform: scale(1.08);
 }
 
 /* ==========================================================================

@@ -381,13 +381,13 @@ class AutoClipperApp {
   // 7. AUTHENTICATION & LOGIN GATE
   // =========================================================================
   openAuthModal() {
-    document.getElementById("auth-modal").classList.add("active");
+    document.getElementById("auth-modal").classList.add("active"); document.body.classList.add("modal-open");
     document.getElementById("auth-error-msg").style.display = "none";
     document.getElementById("auth-username").focus();
   }
 
   closeAuthModal() {
-    document.getElementById("auth-modal").classList.remove("active");
+    document.getElementById("auth-modal").classList.remove("active"); if (!document.getElementById("pricing-modal")?.classList.contains("active")) document.body.classList.remove("modal-open");
   }
 
   submitAuth() {
@@ -454,7 +454,7 @@ class AutoClipperApp {
   closePricingModal() {
     const modal = document.getElementById("pricing-modal");
     if (modal) {
-      modal.classList.remove("active");
+      modal.classList.remove("active"); if (!document.getElementById("auth-modal")?.classList.contains("active")) document.body.classList.remove("modal-open");
     }
   }
 
@@ -890,3 +890,26 @@ class AutoClipperApp {
 
 // Global instance
 window.app = new AutoClipperApp();
+
+// Global modal backdrop click & Escape key listener
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".modal-overlay").forEach(overlay => {
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        if (window.app) {
+          window.app.closeAuthModal();
+          window.app.closePricingModal();
+        }
+      }
+    });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (window.app) {
+        window.app.closeAuthModal();
+        window.app.closePricingModal();
+      }
+    }
+  });
+});
