@@ -263,14 +263,14 @@ def call_with_rotation(
         if groq_key:
             pool.append({
                 "provider_id": "groq",
-                "model_id": "llama3-8b-8192",
+                "model_id": "llama-4-scout-17b-16e-instruct",
                 "status": "available",
                 "speed_tier": "fast",
                 "capabilities": ["chat", "vision"]
             })
             pool.append({
                 "provider_id": "groq",
-                "model_id": "llama-3.3-70b-versatile",
+                "model_id": "llama-4-maverick-17b-128e-instruct",
                 "status": "available",
                 "speed_tier": "medium",
                 "capabilities": ["chat", "vision"]
