@@ -142,6 +142,10 @@ def download_audio_and_subtitles(
     user_cookie_file = None
     try:
         user_cookie_file = get_user_cookie_file(user_id)
+        if user_cookie_file and os.path.exists(user_cookie_file):
+            print(f"[Downloader] Menggunakan Cookie otentikasi dari UI (Ukuran: {os.path.getsize(user_cookie_file)} bytes)")
+        else:
+            print("[Downloader] PERINGATAN: Tidak ada Cookie yang terdeteksi dari UI! YouTube berpotensi memblokir akses.")
     except Exception as e:
         print(f"[Info] Status cookie user: {e}")
 
@@ -287,8 +291,12 @@ def download_clip_section(
     user_cookie_file = None
     try:
         user_cookie_file = get_user_cookie_file(user_id)
-    except Exception:
-        pass
+        if user_cookie_file and os.path.exists(user_cookie_file):
+            print(f"[Downloader] Menggunakan Cookie otentikasi dari UI (Ukuran: {os.path.getsize(user_cookie_file)} bytes)")
+        else:
+            print("[Downloader] PERINGATAN: Tidak ada Cookie yang terdeteksi dari UI! YouTube berpotensi memblokir akses.")
+    except Exception as e:
+        print(f"[Downloader] Gagal memuat cookie: {e}")
 
     section_spec = f"*{ts_start}-{ts_end}"
     print(f"[Downloader] Mengunduh segmen video '{clip_id}': rentang {ts_start} -> {ts_end}...")
