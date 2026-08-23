@@ -3,7 +3,6 @@ Model Pool & Rotation Engine (LLM Router)
 Mengelola status ketersediaan, ranking kecepatan, self-healing cooldown,
 dan failover otomatis lintas provider multi-LLM.
 """
-
 import json
 import os
 import datetime
@@ -11,8 +10,9 @@ import time
 import requests
 from typing import List, Dict, Any, Optional, Tuple, Callable
 from huggingface_hub import HfApi, hf_hub_download
-
 from pipeline.registry import get_provider_spec
+
+BAD_LLM_KEYWORDS = ["whisper", "safeguard", "prompt-guard", "guard", "orpheus", "tts", "vision"]
 
 
 def parse_iso_datetime(dt_str: Optional[str]) -> Optional[datetime.datetime]:
@@ -57,7 +57,6 @@ def get_user_pool_file(user_id: str, public_repo_id: str, hf_token: Optional[str
     }
     if not public_repo_id:
         return default_structure
-
     try:
         local_path = hf_hub_download(
             repo_id=public_repo_id,
@@ -106,10 +105,10 @@ def refresh_provider_models_in_pool(
     """
     pool_data = get_user_pool_file(user_id, public_repo_id, hf_token)
     existing_models = pool_data.get("models", [])
-    
+
     # Hapus model lama untuk provider ini
     filtered_models = [m for m in existing_models if m.get("provider_id") != provider_id]
-    
+
     spec = get_provider_spec(provider_id)
     speed = spec.speed_tier if spec else "medium"
     caps = spec.capabilities if spec else ["chat"]
@@ -127,7 +126,6 @@ def refresh_provider_models_in_pool(
             "last_result": "discovered",
             "updated_at": now_iso
         })
-
     pool_data["models"] = filtered_models
     save_user_pool_file(user_id, pool_data, public_repo_id, hf_token)
 
@@ -180,8 +178,7 @@ def get_ranked_pool(
         model_id_lower = item.get("model_id", "").lower()
         provider = item.get("provider_id", "").lower()
         if capability == "chat" and provider == "groq":
-            bad_keywords = ["whisper", "safeguard", "prompt-guard", "orpheus"]
-            if any(bad in model_id_lower for bad in bad_keywords):
+            if any(bad in model_id_lower for bad in BAD_LLM_KEYWORDS):
                 continue
 
         status = item.get("status", "available")
@@ -231,8 +228,8 @@ def mark_model_status(
     pool_data = get_user_pool_file(user_id, public_repo_id, hf_token)
     now_dt = datetime.datetime.now(datetime.timezone.utc)
     updated = False
-
     cooldown_until_iso = None
+
     if status == "cooldown" and cooldown_seconds:
         cooldown_until_iso = (now_dt + datetime.timedelta(seconds=cooldown_seconds)).isoformat()
 
@@ -244,7 +241,7 @@ def mark_model_status(
             m["updated_at"] = now_dt.isoformat()
             updated = True
             break
-            
+
     if not updated:
         pool_data.setdefault("models", []).append({
             "provider_id": provider_id,
@@ -278,34 +275,66 @@ def call_with_rotation(
     Jika model pertama gagal (429/401/error), otomatis mencoba model berikutnya di antrean.
     """
     pool = get_ranked_pool(user_id, public_repo_id, hf_token, capability=capability)
+
+    # Print isi pool MENTAH-MENTAH dari get_ranked_pool sebelum injection
+    print(f"\n[LLM Router Debug] RAW pool from get_ranked_pool (length: {len(pool)}):")
+    for p in pool:
+        print(f"  - {p.get('provider_id')} / {p.get('model_id')} (status: {p.get('status')})")
+
     # Fallback: Auto-inject defaults if pool state is missing a provider but has the key
     provider_ids = [p.get("provider_id") for p in pool]
-    
+
     if "groq" not in provider_ids:
         groq_key = get_raw_key_fn("groq")
         if groq_key:
-            # Inject reliable fallback models directly
-            robust_models = [
-                "llama-3.3-70b-versatile",
-                "llama-3.1-8b-instant",
-                "mixtral-8x7b-32768",
-                "gemma2-9b-it"
-            ]
-            for i, m in enumerate(robust_models):
-                pool.append({
-                    "provider_id": "groq",
-                    "model_id": m,
-                    "status": "available",
-                    "speed_tier": "fast" if i == 0 else "medium",
-                    "capabilities": ["chat"]
-                })
+            try:
+                resp = requests.get(
+                    "https://api.groq.com/openai/v1/models",
+                    headers={"Authorization": f"Bearer {groq_key.strip()}"},
+                    timeout=10
+                )
+                if resp.status_code == 200:
+                    api_models = [m.get("id") for m in resp.json().get("data", []) if m.get("active") is True]
+
+                    # Filter only LLM models, exclude bad keywords
+                    llm_models = []
+                    for m in api_models:
+                        if not any(bad in m.lower() for bad in BAD_LLM_KEYWORDS):
+                            llm_models.append(m)
+
+                    # Sort to prioritize known good families if they exist
+                    def model_score(name):
+                        name = name.lower()
+                        if "llama" in name:
+                            return 0
+                        if "qwen" in name:
+                            return 1
+                        if "mixtral" in name:
+                            return 2
+                        if "gemma" in name:
+                            return 3
+                        return 4
+
+                    llm_models.sort(key=model_score)
+
+                    # Inject up to 3 available models into the pool
+                    for i, m in enumerate(llm_models[:3]):
+                        pool.append({
+                            "provider_id": "groq",
+                            "model_id": m,
+                            "status": "available",
+                            "speed_tier": "fast" if i == 0 else "medium",
+                            "capabilities": ["chat"]
+                        })
+            except Exception as e:
+                print(f"[Warning] Gagal fetch Groq models: {e}")
 
     if "gemini" not in provider_ids:
         gemini_key = get_raw_key_fn("gemini")
         if gemini_key:
             pool.append({
                 "provider_id": "gemini",
-                "model_id": "gemini-1.5-flash",
+                "model_id": "gemini-flash-latest",
                 "status": "available",
                 "speed_tier": "fast",
                 "capabilities": ["chat", "vision"]
@@ -325,7 +354,8 @@ def call_with_rotation(
     if not pool:
         raise RuntimeError("Belum ada provider/model LLM yang tersambung di akun Anda. Silakan sambungkan key di Tab Pengaturan.")
 
-    print(f"\n[LLM Router Debug] Active provider_ids before loop: {provider_ids}")
+    active_providers = [p.get("provider_id") for p in pool]
+    print(f"\n[LLM Router Debug] Active provider_ids before loop: {active_providers}")
     print(f"[LLM Router Debug] Final pool loaded (length: {len(pool)}):")
     for p in pool:
         print(f"  - {p.get('provider_id')} / {p.get('model_id')} (status: {p.get('status')})")
@@ -342,7 +372,10 @@ def call_with_rotation(
         # Jika sampai ke entry yang masih cooldown, artinya SEMUA model di pool sedang cooldown
         if status == "cooldown":
             remaining = format_countdown(cooldown_until)
-            raise RuntimeError(f"Semua model LLM di pool Anda sedang cooldown. Model tercepat akan pulih dalam {remaining}. Silakan coba beberapa saat lagi atau tambah provider baru di Pengaturan.")
+            raise RuntimeError(
+                f"Semua model LLM di pool Anda sedang cooldown. Model tercepat akan pulih dalam {remaining}. "
+                f"Silakan coba beberapa saat lagi atau tambah provider baru di Pengaturan."
+            )
 
         spec = get_provider_spec(provider_id)
         if not spec or spec.adapter != "openai_compatible":
@@ -350,7 +383,10 @@ def call_with_rotation(
 
         raw_key = get_raw_key_fn(provider_id)
         if not raw_key:
-            mark_model_status(user_id, provider_id, model_id, "disabled", last_result="missing_key", public_repo_id=public_repo_id, hf_token=hf_token)
+            mark_model_status(
+                user_id, provider_id, model_id, "disabled",
+                last_result="missing_key", public_repo_id=public_repo_id, hf_token=hf_token
+            )
             attempt_errors.append(f"{provider_id}/{model_id}: API key tidak ditemukan")
             continue
 
@@ -372,40 +408,57 @@ def call_with_rotation(
         try:
             print(f"\n[LLM HTTP OUT] POST {url}")
             print(f"[LLM HTTP OUT] Payload Model: {payload.get('model')}")
-            
+
             resp = requests.post(url, json=payload, headers=headers, timeout=45)
-            
+
             print(f"[LLM HTTP IN] Status: {resp.status_code}")
             print(f"[LLM HTTP IN] Raw Response (first 400 chars): {resp.text[:400]}")
-            
+
             # Sukses
             if resp.status_code == 200:
                 res_data = resp.json()
                 content = res_data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                mark_model_status(user_id, provider_id, model_id, "available", last_result="success", public_repo_id=public_repo_id, hf_token=hf_token)
+                mark_model_status(
+                    user_id, provider_id, model_id, "available",
+                    last_result="success", public_repo_id=public_repo_id, hf_token=hf_token
+                )
                 return content, {"provider_id": provider_id, "model_id": model_id}
 
             # Rate Limited (429)
             elif resp.status_code == 429:
                 retry_after = resp.headers.get("Retry-After")
                 cd_seconds = int(retry_after) if (retry_after and retry_after.isdigit()) else (60 if spec.default_rpm else 120)
-                mark_model_status(user_id, provider_id, model_id, "cooldown", cooldown_seconds=cd_seconds, last_result="rate_limited", public_repo_id=public_repo_id, hf_token=hf_token)
+                mark_model_status(
+                    user_id, provider_id, model_id, "cooldown",
+                    cooldown_seconds=cd_seconds, last_result="rate_limited",
+                    public_repo_id=public_repo_id, hf_token=hf_token
+                )
                 attempt_errors.append(f"{provider_id}/{model_id} (Rate Limited - Jeda {cd_seconds}s)")
                 continue
 
             # Key Invalid (401 / 403)
             elif resp.status_code in (401, 403):
-                mark_model_status(user_id, provider_id, model_id, "disabled", last_result="invalid_key", public_repo_id=public_repo_id, hf_token=hf_token)
+                mark_model_status(
+                    user_id, provider_id, model_id, "disabled",
+                    last_result="invalid_key", public_repo_id=public_repo_id, hf_token=hf_token
+                )
                 attempt_errors.append(f"{provider_id}/{model_id} (Key Ditolak / Invalid)")
                 continue
 
             # Model Not Found (404)
             elif resp.status_code == 404:
-                mark_model_status(user_id, provider_id, model_id, "disabled", last_result="model_not_found", public_repo_id=public_repo_id, hf_token=hf_token)
+                mark_model_status(
+                    user_id, provider_id, model_id, "disabled",
+                    last_result="model_not_found", public_repo_id=public_repo_id, hf_token=hf_token
+                )
                 attempt_errors.append(f"{provider_id}/{model_id} (Error 404: Model Does Not Exist)")
                 continue
 
             else:
+                mark_model_status(
+                    user_id, provider_id, model_id, "disabled",
+                    last_result="decommissioned_or_error", public_repo_id=public_repo_id, hf_token=hf_token
+                )
                 attempt_errors.append(f"{provider_id}/{model_id} (Error {resp.status_code}: {resp.text[:80]})")
                 continue
 
@@ -418,4 +471,5 @@ def call_with_rotation(
 
     # Jika semua model gagal
     err_summary = "; ".join(attempt_errors)
-    raise RuntimeError(f"Semua provider di pool gagal dieksekusi: {err_summary}. Silakan periksa kunci di Tab Pengaturan.")
+    print(f"[LLM Router Error] Semua provider gagal: {err_summary}")
+    raise RuntimeError("Sistem sedang bermasalah atau sibuk. Tim kami sudah diberi tahu, silakan coba beberapa saat lagi.")
