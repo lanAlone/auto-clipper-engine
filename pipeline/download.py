@@ -14,6 +14,7 @@ from typing import Tuple, Optional, List, Dict, Any
 from pipeline.fetch_user_key import get_user_cookie_file
 from pipeline.stealth_session import generate_youtube_session_cookies
 from pipeline.invidious_proxy import download_audio_via_invidious, download_video_section_via_invidious
+from pipeline.playwright_extractor import get_stream_url_sync
 
 
 MAX_DURATION_SECONDS = 10800  # 3 Jam Penuh (Podcast Panjang)
@@ -206,9 +207,24 @@ def download_audio_and_subtitles(
                 raw_audio_path = raw_files[0]
                 print("[Downloader] SUKSES mengunduh audio via Playwright Embed Session!")
 
-    # Fallback to Invidious Proxy Stream (Tier 7 - Ultimate Cloud Bypass)
+    # Fallback Tier 8: Playwright Native Stream Intercept
     if not download_success:
-        print("[Downloader] Mencoba Tier 7: Invidious API Proxy Stream (Bypass 403)...")
+        print("[Downloader] Mencoba Tier 8: Playwright Native Stream Intercept...")
+        raw_audio_path = os.path.join(output_dir, f"{video_id}_raw_pw.m4a")
+        stream_url = get_stream_url_sync(url, user_cookie_file)
+        if stream_url:
+            print(f"[Downloader] Stream URL Ditemukan! Mengunduh dengan ffmpeg...")
+            cmd = ["ffmpeg", "-y", "-i", stream_url, "-c", "copy", raw_audio_path]
+            code, out, err = run_cmd(cmd, timeout_sec=300)
+            if code == 0 and os.path.exists(raw_audio_path) and os.path.getsize(raw_audio_path) > 100000:
+                download_success = True
+                print("[Downloader] SUKSES mengunduh audio via Playwright Native Intercept!")
+            else:
+                print(f"[Downloader] Gagal mengunduh stream URL dengan ffmpeg: {err[-100:]}")
+
+    # Fallback to Invidious Proxy Stream (Tier 9 - Ultimate Cloud Bypass)
+    if not download_success:
+        print("[Downloader] Mencoba Tier 9: Invidious API Proxy Stream (Bypass 403)...")
         raw_audio_path = os.path.join(output_dir, f"{video_id}_raw_proxy.m4a")
         if download_audio_via_invidious(video_id, raw_audio_path):
             download_success = True
@@ -297,8 +313,25 @@ def download_clip_section(
             print(f"[Downloader] Sukses mengunduh segmen {clip_id} (Proxy: {bool(proxy)}, Client: {client_arg})!")
             return out_mp4_path
 
-    # Fallback Tier 7 untuk Video
-    print(f"[Downloader] Mencoba Tier 7 untuk segmen {clip_id}: Invidious Proxy Video Stream...")
+    # Fallback Tier 8: Playwright Native Stream
+    print(f"[Downloader] Mencoba Tier 8 untuk segmen {clip_id}: Playwright Native Stream Intercept...")
+    stream_url = get_stream_url_sync(url, user_cookie_file)
+    if stream_url:
+        cmd = [
+            "ffmpeg", "-y",
+            "-ss", str(max(0.0, start_sec - 0.5)),
+            "-i", stream_url,
+            "-t", str((end_sec - start_sec) + 1.0),
+            "-c", "copy",
+            out_mp4_path
+        ]
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
+        if proc.returncode == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
+            print(f"[Downloader] Sukses mengunduh segmen {clip_id} via Playwright Native!")
+            return out_mp4_path
+
+    # Fallback Tier 9 untuk Video
+    print(f"[Downloader] Mencoba Tier 9 untuk segmen {clip_id}: Invidious Proxy Video Stream...")
     if download_video_section_via_invidious(video_id, start_sec, end_sec, out_mp4_path):
         print(f"[Downloader] Sukses mengunduh segmen {clip_id} via Invidious Proxy!")
         return out_mp4_path

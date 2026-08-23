@@ -4,9 +4,12 @@ from typing import Optional, Tuple
 import subprocess
 
 INVIDIOUS_INSTANCES = [
-    "https://invidious.nerdvpn.de",
-    "https://invidious.jing.rocks",
-    "https://vid.puffyan.us"
+    "https://inv.nadeko.net",
+    "https://invidious.f5.si",
+    "https://yt.chocolatemoo53.com",
+    "https://invidious.tiekoetter.com",
+    "https://inv.nadeko.ygg",
+    "https://invidious.nerdvpn.de"
 ]
 
 def get_proxy_stream_url(video_id: str, itag: int) -> str:
