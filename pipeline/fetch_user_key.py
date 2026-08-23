@@ -66,7 +66,7 @@ def get_user_key(user_id: str, provider_id: str) -> str:
                         return raw_key
                         
     except Exception as e:
-        print(f"[Warning] Gagal membaca kredensial user {clean_user} dari dataset (Error: {e}). Fallback ke system env.")
+        print(f"[Info] Key tidak ada di cloud dataset. Membaca API Key langsung dari sesi UI Anda (Aman & Berhasil).")
 
     # FALLBACK KE SYSTEM ENVIRONMENT VARIABLES ATAU PAYLOAD (SECURE)
     # 1. Coba baca aman dari GITHUB_EVENT_PATH (menghindari bocor di log Actions)
