@@ -31,6 +31,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg xvfb fonts-liberation libnss3 libatk-bridge2.0-0 libgtk-3-0 libgbm1 libasound2 libxss1 || true
 
+      - name: Setup Cloudflare WARP Network (Anti-Datacenter Bypass)
+        run: |
+          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-warp.list
+          sudo apt-get update
+          sudo apt-get install -y cloudflare-warp
+          warp-cli --accept-tos registration new || true
+          warp-cli --accept-tos mode proxy || warp-cli --accept-tos set-mode proxy || true
+          warp-cli --accept-tos proxy port 40000 || warp-cli --accept-tos set-proxy-port 40000 || true
+          warp-cli --accept-tos connect || true
+          sleep 4
+          curl -x socks5://127.0.0.1:40000 -s https://cloudflare.com/cdn-cgi/trace || true
+
       - name: Install Python Dependencies
         run: |
           pip install --upgrade pip
@@ -53,7 +66,14 @@ jobs:
           HF_KEYS_DATASET_REPO_ID: ${{ secrets.HF_KEYS_DATASET_REPO_ID }}
           MASTER_ENCRYPTION_KEY: ${{ secrets.MASTER_ENCRYPTION_KEY }}
         run: |
-          python pipeline/main.py             --job_id "${{ github.event.client_payload.job_id }}"             --user_id "${{ github.event.client_payload.user_id }}"             --youtube_url "${{ github.event.client_payload.youtube_url }}"             --duration_mode "${{ github.event.client_payload.duration_mode || 'standard_30_60' }}"             --clip_count "${{ github.event.client_payload.clip_count || 3 }}"             --crop_mode "${{ github.event.client_payload.crop_mode || 'blurred_stack' }}"             --caption_style "${{ github.event.client_payload.caption_style || 'bold_yellow' }}"
+          python pipeline/main.py \
+            --job_id "${{ github.event.client_payload.job_id }}" \
+            --user_id "${{ github.event.client_payload.user_id }}" \
+            --youtube_url "${{ github.event.client_payload.youtube_url }}" \
+            --duration_mode "${{ github.event.client_payload.duration_mode || 'standard_30_60' }}" \
+            --clip_count "${{ github.event.client_payload.clip_count || 3 }}" \
+            --crop_mode "${{ github.event.client_payload.crop_mode || 'blurred_stack' }}" \
+            --caption_style "${{ github.event.client_payload.caption_style || 'bold_yellow' }}"
 
       # FAILURE TRAP: Mengunggah status error ke HF Dataset jika runner crash
       - name: System Failure Trap
@@ -63,4 +83,9 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_DATASET_REPO_ID: ${{ secrets.HF_DATASET_REPO_ID }}
         run: |
-          python pipeline/status.py             --job_id "${{ github.event.client_payload.job_id }}"             --user_id "${{ github.event.client_payload.user_id }}"             --status "error"             --message "Runner GitHub Actions mengalami kegagalan sistem pada runner."             --error "GitHub Actions Runner Failure"
+          python pipeline/status.py \
+            --job_id "${{ github.event.client_payload.job_id }}" \
+            --user_id "${{ github.event.client_payload.user_id }}" \
+            --status "error" \
+            --message "Runner GitHub Actions mengalami kegagalan sistem pada runner." \
+            --error "GitHub Actions Runner Failure"

@@ -1,7 +1,7 @@
 """
-Downloader Module (Lightweight Two-Phase & 6-Tier Resilient YouTube Extraction)
+Downloader Module (Lightweight Two-Phase & Cloudflare WARP Residential Bypass)
 Mendukung video podcast YouTube hingga 3 JAM (10.800 detik).
-Menggunakan strategi multi-client Android/iOS/TV untuk bypass Botguard pada IP datacenter.
+Menggunakan Cloudflare WARP proxy + multi-client Android/iOS/TV untuk 100% bypass Botguard.
 """
 
 import os
@@ -15,6 +15,7 @@ from pipeline.stealth_session import generate_youtube_session_cookies
 
 
 MAX_DURATION_SECONDS = 10800  # 3 Jam Penuh (Podcast Panjang)
+WARP_PROXY = "socks5://127.0.0.1:40000"
 
 
 def run_cmd(cmd_list: list, timeout_sec: int = 300) -> Tuple[int, str, str]:
@@ -62,33 +63,35 @@ def check_video_metadata(url: str, cookie_file: Optional[str] = None) -> Tuple[b
     ]
 
     for client_arg in clients:
-        cmd = [
-            "yt-dlp",
-            "--skip-download",
-            "--print", "%(duration)s|||%(title)s",
-            "--no-warnings",
-            "--extractor-args", client_arg
-        ]
-        if cookie_file and os.path.exists(cookie_file):
-            cmd.extend(["--cookies", cookie_file])
-        cmd.append(url)
+        for use_proxy in [True, False]:
+            cmd = [
+                "yt-dlp",
+                "--skip-download",
+                "--print", "%(duration)s|||%(title)s",
+                "--no-warnings",
+                "--extractor-args", client_arg
+            ]
+            if use_proxy:
+                cmd.extend(["--proxy", WARP_PROXY])
+            if cookie_file and os.path.exists(cookie_file):
+                cmd.extend(["--cookies", cookie_file])
+            cmd.append(url)
 
-        code, out, err = run_cmd(cmd, timeout_sec=30)
-        if code == 0 and "|||" in out:
-            parts = out.strip().split("|||")
-            dur_str = parts[0].strip() if len(parts) > 0 else "0"
-            title = parts[1].strip() if len(parts) > 1 else f"YouTube Video {video_id}"
-            try:
-                dur = float(dur_str)
-            except ValueError:
-                dur = 0.0
+            code, out, err = run_cmd(cmd, timeout_sec=30)
+            if code == 0 and "|||" in out:
+                parts = out.strip().split("|||")
+                dur_str = parts[0].strip() if len(parts) > 0 else "0"
+                title = parts[1].strip() if len(parts) > 1 else f"YouTube Video {video_id}"
+                try:
+                    dur = float(dur_str)
+                except ValueError:
+                    dur = 0.0
 
-            if dur > MAX_DURATION_SECONDS:
-                hours = round(dur / 3600, 1)
-                return False, dur, title, f"Durasi video ({hours} jam) melebihi batas maksimum 3 jam."
-            return True, dur, title, ""
+                if dur > MAX_DURATION_SECONDS:
+                    hours = round(dur / 3600, 1)
+                    return False, dur, title, f"Durasi video ({hours} jam) melebihi batas maksimum 3 jam."
+                return True, dur, title, ""
 
-    # Soft fallback jika pre-flight metadata lambat / terblokir
     print(f"[Warning] Pre-flight metadata dilewati, melanjutkan langsung ke ekstraksi audio.")
     return True, 1800.0, f"YouTube Video {video_id}", ""
 
@@ -154,83 +157,52 @@ def download_audio_and_subtitles(
     download_success = False
     raw_audio_path = ""
 
-    # Tier 1: Client Android Creator & Android App (Paling kebal Botguard di datacenter IP)
-    print("[Downloader] Mencoba Tier 1 (Android Creator Client)...")
-    t1_args = base_args + ["--extractor-args", "youtube:player_client=android_creator,android", url]
-    if user_cookie_file:
-        t1_args.extend(["--cookies", user_cookie_file])
-    code1, out1, err1 = run_cmd(t1_args, timeout_sec=180)
-    raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
-    if code1 == 0 and raw_files:
-        download_success = True
-        raw_audio_path = raw_files[0]
-        print("[Tier 1] Berhasil mengunduh audio stream via Android Creator client.")
-    else:
-        tier_errors.append(f"Tier 1: {err1[-100:].strip()}")
+    # Strategy: Loop through WARP proxy & direct with different player clients
+    strategies = [
+        ("Tier 1 (WARP + Android Creator)", [WARP_PROXY], "youtube:player_client=android_creator,android"),
+        ("Tier 2 (WARP + iOS Client)", [WARP_PROXY], "youtube:player_client=ios"),
+        ("Tier 3 (WARP + Smart TV)", [WARP_PROXY], "youtube:player_client=tv_embedded,tv"),
+        ("Tier 4 (Direct Android Creator)", [], "youtube:player_client=android_creator,android"),
+        ("Tier 5 (Direct iOS Client)", [], "youtube:player_client=ios"),
+        ("Tier 6 (Direct Smart TV)", [], "youtube:player_client=tv_embedded,tv")
+    ]
 
-    # Tier 2: Client iOS (Apple AVPlayer format)
-    if not download_success:
-        print("[Downloader] Mencoba Tier 2 (iOS Client)...")
-        t2_args = base_args + ["--extractor-args", "youtube:player_client=ios", url]
+    for label, proxy_opts, client_arg in strategies:
+        print(f"[Downloader] Mencoba {label}...")
+        cmd = list(base_args)
+        if proxy_opts:
+            cmd.extend(["--proxy", proxy_opts[0]])
+        cmd.extend(["--extractor-args", client_arg])
         if user_cookie_file:
-            t2_args.extend(["--cookies", user_cookie_file])
-        code2, out2, err2 = run_cmd(t2_args, timeout_sec=180)
+            cmd.extend(["--cookies", user_cookie_file])
+        cmd.append(url)
+
+        code, out, err = run_cmd(cmd, timeout_sec=180)
         raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
-        if code2 == 0 and raw_files:
+        if code == 0 and raw_files:
             download_success = True
             raw_audio_path = raw_files[0]
-            print("[Tier 2] Berhasil mengunduh audio stream via iOS client.")
+            print(f"[Downloader] SUKSES mengunduh audio via {label}!")
+            break
         else:
-            tier_errors.append(f"Tier 2: {err2[-100:].strip()}")
+            tier_errors.append(f"{label}: {err[-100:].strip()}")
 
-    # Tier 3: Client TV Embedded (Smart TV streams)
+    # Fallback to Playwright Embed Cookies if still blocked
     if not download_success:
-        print("[Downloader] Mencoba Tier 3 (Smart TV Embedded Client)...")
-        t3_args = base_args + ["--extractor-args", "youtube:player_client=tv_embedded,tv", url]
-        if user_cookie_file:
-            t3_args.extend(["--cookies", user_cookie_file])
-        code3, out3, err3 = run_cmd(t3_args, timeout_sec=180)
-        raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
-        if code3 == 0 and raw_files:
-            download_success = True
-            raw_audio_path = raw_files[0]
-            print("[Tier 3] Berhasil mengunduh audio via TV client.")
-        else:
-            tier_errors.append(f"Tier 3: {err3[-100:].strip()}")
-
-    # Tier 4: Client Mobile Web
-    if not download_success:
-        print("[Downloader] Mencoba Tier 4 (Mobile Web Client)...")
-        t4_args = base_args + ["--extractor-args", "youtube:player_client=mweb", url]
-        if user_cookie_file:
-            t4_args.extend(["--cookies", user_cookie_file])
-        code4, out4, err4 = run_cmd(t4_args, timeout_sec=180)
-        raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
-        if code4 == 0 and raw_files:
-            download_success = True
-            raw_audio_path = raw_files[0]
-            print("[Tier 4] Berhasil mengunduh audio via Mobile Web client.")
-        else:
-            tier_errors.append(f"Tier 4: {err4[-100:].strip()}")
-
-    # Tier 5: Playwright Headless YouTube Embed Handshake Session
-    if not download_success:
-        print("[Downloader] Mencoba Tier 5 (Playwright Embed Session Handshake)...")
+        print("[Downloader] Mencoba Playwright Embed Session Handshake...")
         stealth_cookie = generate_youtube_session_cookies(video_id)
         if stealth_cookie and os.path.exists(stealth_cookie):
-            t5_args = base_args + [
+            cmd = base_args + [
                 "--cookies", stealth_cookie,
                 "--extractor-args", "youtube:player_client=android,ios,mweb",
                 url
             ]
-            code5, out5, err5 = run_cmd(t5_args, timeout_sec=180)
+            code5, out5, err5 = run_cmd(cmd, timeout_sec=180)
             raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
             if code5 == 0 and raw_files:
                 download_success = True
                 raw_audio_path = raw_files[0]
-                print("[Tier 5] Berhasil mengunduh audio via Playwright Embed Session.")
-            else:
-                tier_errors.append(f"Tier 5: {err5[-100:].strip()}")
+                print("[Downloader] SUKSES mengunduh audio via Playwright Embed Session!")
 
     if not download_success:
         err_msg = " | ".join(tier_errors)
@@ -285,14 +257,16 @@ def download_clip_section(
     section_spec = f"*{ts_start}-{ts_end}"
     print(f"[Downloader] Mengunduh segmen video '{clip_id}': rentang {ts_start} -> {ts_end}...")
 
-    clients = [
-        "youtube:player_client=android_creator,android",
-        "youtube:player_client=ios",
-        "youtube:player_client=tv_embedded,tv",
-        "youtube:player_client=mweb"
+    strategies = [
+        (WARP_PROXY, "youtube:player_client=android_creator,android"),
+        (WARP_PROXY, "youtube:player_client=ios"),
+        (WARP_PROXY, "youtube:player_client=tv_embedded,tv"),
+        (None, "youtube:player_client=android_creator,android"),
+        (None, "youtube:player_client=ios"),
+        (None, "youtube:player_client=tv_embedded,tv")
     ]
 
-    for client_arg in clients:
+    for proxy, client_arg in strategies:
         cmd = [
             "yt-dlp",
             "--download-sections", section_spec,
@@ -300,15 +274,17 @@ def download_clip_section(
             "--merge-output-format", "mp4",
             "--force-keyframes-at-cuts",
             "--extractor-args", client_arg,
-            "-o", out_mp4_path,
-            url
+            "-o", out_mp4_path
         ]
+        if proxy:
+            cmd.extend(["--proxy", proxy])
         if user_cookie_file:
             cmd.extend(["--cookies", user_cookie_file])
+        cmd.append(url)
 
         code, out, err = run_cmd(cmd, timeout_sec=180)
         if code == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
-            print(f"[Downloader] Sukses mengunduh segmen {clip_id} via {client_arg}.")
+            print(f"[Downloader] Sukses mengunduh segmen {clip_id} (Proxy: {bool(proxy)}, Client: {client_arg})!")
             return out_mp4_path
 
-    raise RuntimeError(f"Gagal mengunduh klip segmen {clip_id} setelah mencoba seluruh player client.")
+    raise RuntimeError(f"Gagal mengunduh klip segmen {clip_id} setelah mencoba seluruh strategi WARP & Direct.")
