@@ -38,33 +38,42 @@ def get_user_key(user_id: str, provider_id: str) -> str:
         )
         with open(local_path, "r", encoding="utf-8") as f:
             user_data = json.load(f)
-    except Exception as e:
-        raise RuntimeError(f"User '{clean_user}' belum memiliki kredensial di dataset privat (Error: {e}). Harap sambungkan API Key di Tab Pengaturan.")
-
-    # Cek khusus untuk Groq transkripsi
-    if clean_provider == "groq" and user_data.get("groq_key_encrypted"):
-        raw_key = decrypt_data(user_data["groq_key_encrypted"])
-        return raw_key
-
-    # Cek di array providers
-    providers = user_data.get("providers", [])
-    for p in providers:
-        if p.get("provider_id", "").lower() == clean_provider:
-            enc_key = p.get("key_encrypted")
-            if not enc_key:
-                break
-            raw_key = decrypt_data(enc_key)
+            
+        # Cek khusus untuk Groq transkripsi
+        if clean_provider == "groq" and user_data.get("groq_key_encrypted"):
+            raw_key = decrypt_data(user_data["groq_key_encrypted"])
             return raw_key
 
-    # Jika provider adalah gemini, coba cari yang berawalan gemini atau google
-    if "gemini" in clean_provider or "google" in clean_provider:
+        # Cek di array providers
+        providers = user_data.get("providers", [])
         for p in providers:
-            if "gemini" in p.get("provider_id", "").lower() or "google" in p.get("provider_id", "").lower():
+            if p.get("provider_id", "").lower() == clean_provider:
                 enc_key = p.get("key_encrypted")
                 if enc_key:
                     return decrypt_data(enc_key)
 
-    raise RuntimeError(f"Kunci API untuk provider '{clean_provider}' belum disambungkan oleh user '{clean_user}'.")
+        # Jika provider adalah gemini, coba cari yang berawalan gemini atau google
+        if "gemini" in clean_provider or "google" in clean_provider:
+            for p in providers:
+                if "gemini" in p.get("provider_id", "").lower() or "google" in p.get("provider_id", "").lower():
+                    enc_key = p.get("key_encrypted")
+                    if enc_key:
+                        return decrypt_data(enc_key)
+                        
+    except Exception as e:
+        print(f"[Warning] Gagal membaca kredensial user {clean_user} dari dataset (Error: {e}). Fallback ke system env.")
+
+    # FALLBACK KE SYSTEM ENVIRONMENT VARIABLES
+    if clean_provider == "groq":
+        system_key = os.environ.get("GROQ_API_KEY")
+        if system_key:
+            return system_key
+    elif "gemini" in clean_provider or "google" in clean_provider:
+        system_key = os.environ.get("GEMINI_API_KEY")
+        if system_key:
+            return system_key
+
+    raise RuntimeError(f"Kunci API untuk provider '{clean_provider}' belum disambungkan oleh user '{clean_user}' dan tidak ada kunci sistem.")
 
 
 def get_user_cookie_file(user_id: str) -> Optional[str]:
