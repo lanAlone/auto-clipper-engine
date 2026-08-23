@@ -5,6 +5,7 @@ Menggunakan Cloudflare WARP proxy + multi-client Android/iOS/TV untuk 100% bypas
 """
 
 import os
+import sys
 import subprocess
 import re
 import json
@@ -65,7 +66,7 @@ def check_video_metadata(url: str, cookie_file: Optional[str] = None) -> Tuple[b
     for client_arg in clients:
         for use_proxy in [True, False]:
             cmd = [
-                "yt-dlp",
+                sys.executable, "-m", "yt_dlp",
                 "--skip-download",
                 "--print", "%(duration)s|||%(title)s",
                 "--no-warnings",
@@ -145,7 +146,7 @@ def download_audio_and_subtitles(
     print(f"[Downloader] Memproses video: '{title}' ({duration_sec:.1f} detik)...")
 
     base_args = [
-        "yt-dlp",
+        sys.executable, "-m", "yt_dlp",
         "--format", "bestaudio[ext=m4a]/bestaudio/best",
         "--write-auto-sub", "--sub-lang", "id,en",
         "--sub-format", "vtt",
@@ -158,13 +159,12 @@ def download_audio_and_subtitles(
     raw_audio_path = ""
 
     # Strategy: Loop through WARP proxy & direct with different player clients
+    # With yt-dlp >= 2025, tv, ios, and mweb are the most resilient against botguard
     strategies = [
-        ("Tier 1 (WARP + Android Creator)", [WARP_PROXY], "youtube:player_client=android_creator,android"),
+        ("Tier 1 (WARP + TV Client)", [WARP_PROXY], "youtube:player_client=tv_embedded,tv"),
         ("Tier 2 (WARP + iOS Client)", [WARP_PROXY], "youtube:player_client=ios"),
-        ("Tier 3 (WARP + Smart TV)", [WARP_PROXY], "youtube:player_client=tv_embedded,tv"),
-        ("Tier 4 (Direct Android Creator)", [], "youtube:player_client=android_creator,android"),
-        ("Tier 5 (Direct iOS Client)", [], "youtube:player_client=ios"),
-        ("Tier 6 (Direct Smart TV)", [], "youtube:player_client=tv_embedded,tv")
+        ("Tier 3 (Direct TV Client)", [], "youtube:player_client=tv_embedded,tv"),
+        ("Tier 4 (Direct iOS Client)", [], "youtube:player_client=ios")
     ]
 
     for label, proxy_opts, client_arg in strategies:
@@ -258,17 +258,15 @@ def download_clip_section(
     print(f"[Downloader] Mengunduh segmen video '{clip_id}': rentang {ts_start} -> {ts_end}...")
 
     strategies = [
-        (WARP_PROXY, "youtube:player_client=android_creator,android"),
-        (WARP_PROXY, "youtube:player_client=ios"),
         (WARP_PROXY, "youtube:player_client=tv_embedded,tv"),
-        (None, "youtube:player_client=android_creator,android"),
-        (None, "youtube:player_client=ios"),
-        (None, "youtube:player_client=tv_embedded,tv")
+        (WARP_PROXY, "youtube:player_client=ios"),
+        (None, "youtube:player_client=tv_embedded,tv"),
+        (None, "youtube:player_client=ios")
     ]
 
     for proxy, client_arg in strategies:
         cmd = [
-            "yt-dlp",
+            sys.executable, "-m", "yt_dlp",
             "--download-sections", section_spec,
             "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
             "--merge-output-format", "mp4",
