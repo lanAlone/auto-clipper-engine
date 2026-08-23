@@ -258,6 +258,34 @@ def call_with_rotation(
     """
     pool = get_ranked_pool(user_id, public_repo_id, hf_token, capability=capability)
     if not pool:
+        # Fallback: Auto-inject defaults if pool state is empty (e.g. serverless UI mode)
+        groq_key = get_raw_key_fn("groq")
+        if groq_key:
+            pool.append({
+                "provider_id": "groq",
+                "model_id": "llama3-8b-8192",
+                "status": "available",
+                "speed_tier": "fast",
+                "capabilities": ["chat", "vision"]
+            })
+            pool.append({
+                "provider_id": "groq",
+                "model_id": "llama3-70b-8192",
+                "status": "available",
+                "speed_tier": "medium",
+                "capabilities": ["chat", "vision"]
+            })
+        gemini_key = get_raw_key_fn("gemini")
+        if gemini_key:
+            pool.append({
+                "provider_id": "gemini",
+                "model_id": "gemini-1.5-flash",
+                "status": "available",
+                "speed_tier": "fast",
+                "capabilities": ["chat", "vision"]
+            })
+
+    if not pool:
         raise RuntimeError("Belum ada provider/model LLM yang tersambung di akun Anda. Silakan sambungkan key di Tab Pengaturan.")
 
     attempt_errors = []
