@@ -85,6 +85,10 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_DATASET_REPO_ID: ${{ secrets.HF_DATASET_REPO_ID }}
         run: |
+          if [ -f "work/.error_handled" ]; then
+            echo "Error already handled by main.py. Skipping generic failure trap."
+            exit 0
+          fi
           python pipeline/status.py \
             --job_id "${{ github.event.client_payload.job_id }}" \
             --user_id "${{ github.event.client_payload.user_id }}" \

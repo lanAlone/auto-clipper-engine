@@ -193,6 +193,9 @@ def main():
             message=f"Terjadi kesalahan saat memproses video: {err_detail}",
             error=err_detail
         )
+        os.makedirs("work", exist_ok=True)
+        with open("work/.error_handled", "w") as f:
+            f.write("handled")
         sys.exit(1)
 
 
