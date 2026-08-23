@@ -147,7 +147,7 @@ def download_audio_and_subtitles(
 
     base_args = [
         sys.executable, "-m", "yt_dlp",
-        "--format", "bestaudio[ext=m4a]/bestaudio/best",
+        "--format", "bestaudio/best",
         "--write-auto-sub", "--sub-lang", "id,en",
         "--sub-format", "vtt",
         "-o", audio_raw_template,
@@ -161,10 +161,18 @@ def download_audio_and_subtitles(
     # Strategy: Loop through WARP proxy & direct with different player clients
     # With yt-dlp >= 2025, tv, ios, and mweb are the most resilient against botguard
     strategies = [
-        ("Tier 1 (WARP + TV Client)", [WARP_PROXY], "youtube:player_client=tv_embedded,tv"),
-        ("Tier 2 (WARP + iOS Client)", [WARP_PROXY], "youtube:player_client=ios"),
-        ("Tier 3 (Direct TV Client)", [], "youtube:player_client=tv_embedded,tv"),
-        ("Tier 4 (Direct iOS Client)", [], "youtube:player_client=ios")
+        # 1. WARP Proxy + TV Client
+        ("Tier 1 (WARP + TV Client)", [WARP_PROXY], "youtube:player_client=tv"),
+        # 2. WARP Proxy + Android Client
+        ("Tier 2 (WARP + Android)", [WARP_PROXY], "youtube:player_client=android"),
+        # 3. WARP Proxy + iOS Client
+        ("Tier 3 (WARP + iOS)", [WARP_PROXY], "youtube:player_client=ios"),
+        # 4. Direct + default
+        ("Tier 4 (Direct + Default)", [], "youtube:player_client=default"),
+        # 5. Direct + Android
+        ("Tier 5 (Direct + Android)", [], "youtube:player_client=android"),
+        # 6. MWEB Client fallback
+        ("Tier 6 (MWEB Client)", [], "youtube:player_client=mweb")
     ]
 
     for label, proxy_opts, client_arg in strategies:
