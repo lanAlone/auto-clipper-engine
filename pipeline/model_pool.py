@@ -176,6 +176,14 @@ def get_ranked_pool(
         if capability not in item.get("capabilities", ["chat"]):
             continue
 
+        # Hard filter for Groq models that are not general text models
+        model_id_lower = item.get("model_id", "").lower()
+        provider = item.get("provider_id", "").lower()
+        if capability == "chat" and provider == "groq":
+            bad_keywords = ["whisper", "safeguard", "prompt-guard", "orpheus"]
+            if any(bad in model_id_lower for bad in bad_keywords):
+                continue
+
         status = item.get("status", "available")
         cooldown_until_str = item.get("cooldown_until")
 
