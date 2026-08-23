@@ -76,6 +76,7 @@ def check_video_metadata(url: str, cookie_file: Optional[str] = None) -> Tuple[b
                 "--print", "%(duration)s|||%(title)s",
                 "--no-warnings",
                 "--js-runtimes", f"node:{node_path}",
+                "--remote-components", "ejs:github",
                 "--extractor-args", client_arg
             ]
             if use_proxy:
@@ -160,7 +161,8 @@ def download_audio_and_subtitles(
         "-o", audio_raw_template,
         "--no-playlist",
         "--force-ipv4",
-        "--js-runtimes", f"node:{node_path}"
+        "--js-runtimes", f"node:{node_path}",
+        "--remote-components", "ejs:github"
     ]
 
     tier_errors = []
