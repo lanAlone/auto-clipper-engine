@@ -73,7 +73,7 @@ def get_user_key(user_id: str, provider_id: str) -> str:
         if system_key:
             return system_key
 
-    raise RuntimeError(f"Kunci API untuk provider '{clean_provider}' belum disambungkan oleh user '{clean_user}' dan tidak ada kunci sistem.")
+    return ""
 
 
 def get_user_cookie_file(user_id: str) -> Optional[str]:
