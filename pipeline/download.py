@@ -148,8 +148,6 @@ def download_audio_and_subtitles(
     base_args = [
         sys.executable, "-m", "yt_dlp",
         "--format", "bestaudio/best",
-        "--write-auto-sub", "--sub-lang", "id,en",
-        "--sub-format", "vtt",
         "-o", audio_raw_template,
         "--no-playlist"
     ]
@@ -266,10 +264,12 @@ def download_clip_section(
     print(f"[Downloader] Mengunduh segmen video '{clip_id}': rentang {ts_start} -> {ts_end}...")
 
     strategies = [
-        (WARP_PROXY, "youtube:player_client=tv_embedded,tv"),
+        (WARP_PROXY, "youtube:player_client=tv"),
+        (WARP_PROXY, "youtube:player_client=android"),
         (WARP_PROXY, "youtube:player_client=ios"),
-        (None, "youtube:player_client=tv_embedded,tv"),
-        (None, "youtube:player_client=ios")
+        (None, "youtube:player_client=default"),
+        (None, "youtube:player_client=android"),
+        (None, "youtube:player_client=mweb")
     ]
 
     for proxy, client_arg in strategies:
