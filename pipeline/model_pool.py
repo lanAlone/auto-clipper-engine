@@ -236,6 +236,19 @@ def mark_model_status(
             m["updated_at"] = now_dt.isoformat()
             updated = True
             break
+            
+    if not updated:
+        pool_data.setdefault("models", []).append({
+            "provider_id": provider_id,
+            "model_id": model_id,
+            "status": status,
+            "cooldown_until": cooldown_until_iso,
+            "last_result": last_result,
+            "updated_at": now_dt.isoformat(),
+            "speed_tier": "fast",
+            "capabilities": ["chat", "vision"]
+        })
+        updated = True
 
     if updated and public_repo_id and hf_token:
         save_user_pool_file(user_id, pool_data, public_repo_id, hf_token)
@@ -257,24 +270,28 @@ def call_with_rotation(
     Jika model pertama gagal (429/401/error), otomatis mencoba model berikutnya di antrean.
     """
     pool = get_ranked_pool(user_id, public_repo_id, hf_token, capability=capability)
-    if not pool:
-        # Fallback: Auto-inject defaults if pool state is empty (e.g. serverless UI mode)
+    # Fallback: Auto-inject defaults if pool state is missing a provider but has the key
+    provider_ids = [p.get("provider_id") for p in pool]
+    
+    if "groq" not in provider_ids:
         groq_key = get_raw_key_fn("groq")
         if groq_key:
             pool.append({
                 "provider_id": "groq",
-                "model_id": "llama-4-scout-17b-16e-instruct",
+                "model_id": "llama-3.3-70b-versatile",
                 "status": "available",
                 "speed_tier": "fast",
                 "capabilities": ["chat", "vision"]
             })
             pool.append({
                 "provider_id": "groq",
-                "model_id": "llama-4-maverick-17b-128e-instruct",
+                "model_id": "llama-3.1-8b-instant",
                 "status": "available",
                 "speed_tier": "medium",
-                "capabilities": ["chat", "vision"]
+                "capabilities": ["chat"]
             })
+
+    if "gemini" not in provider_ids:
         gemini_key = get_raw_key_fn("gemini")
         if gemini_key:
             pool.append({
@@ -284,6 +301,8 @@ def call_with_rotation(
                 "speed_tier": "fast",
                 "capabilities": ["chat", "vision"]
             })
+
+    if "openrouter" not in provider_ids:
         openrouter_key = get_raw_key_fn("openrouter")
         if openrouter_key:
             pool.append({
@@ -357,6 +376,12 @@ def call_with_rotation(
             elif resp.status_code in (401, 403):
                 mark_model_status(user_id, provider_id, model_id, "disabled", last_result="invalid_key", public_repo_id=public_repo_id, hf_token=hf_token)
                 attempt_errors.append(f"{provider_id}/{model_id} (Key Ditolak / Invalid)")
+                continue
+
+            # Model Not Found (404)
+            elif resp.status_code == 404:
+                mark_model_status(user_id, provider_id, model_id, "disabled", last_result="model_not_found", public_repo_id=public_repo_id, hf_token=hf_token)
+                attempt_errors.append(f"{provider_id}/{model_id} (Error 404: Model Does Not Exist)")
                 continue
 
             else:

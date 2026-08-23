@@ -485,9 +485,10 @@ class AutoClipperApp {
     let savedKeys = JSON.parse(localStorage.getItem("autoclipper_keys") || "{}");
     let groqKey = savedKeys["groq"] ? savedKeys["groq"].key : "";
     let geminiKey = savedKeys["gemini"] ? savedKeys["gemini"].key : "";
+    let openrouterKey = savedKeys["openrouter"] ? savedKeys["openrouter"].key : "";
 
-    if (!groqKey && !geminiKey) {
-      alert("⚠️ Kunci API Wajib Diisi!\n\nSistem membutuhkan setidaknya satu API Key (Groq atau Gemini) untuk memproses AI. Silakan masuk ke menu 'Pengaturan Kunci API' untuk memasukkannya.");
+    if (!groqKey && !geminiKey && !openrouterKey) {
+      alert("⚠️ Kunci API Wajib Diisi!\n\nSistem membutuhkan setidaknya satu API Key (Groq, Gemini, atau OpenRouter) untuk memproses AI. Silakan masuk ke menu 'Pengaturan Kunci API' untuk memasukkannya.");
       return;
     }
 
@@ -529,7 +530,9 @@ class AutoClipperApp {
             crop_mode: cropMode,
             caption_style: captionStyle,
             groq_key: groqKey,
-            gemini_key: geminiKey
+            gemini_key: geminiKey,
+            openrouter_key: openrouterKey,
+            cookie_text: localCookie || ""
           }
         })
       });
@@ -744,6 +747,11 @@ class AutoClipperApp {
 
         const models = (data.data || []).map(m => m.id).filter(Boolean);
         const whisperFound = models.some(m => m.includes('whisper'));
+        const llamaFound = models.some(m => m.includes('llama-3.3-70b-versatile') || m.includes('llama-3.1-8b-instant'));
+
+        if (!llamaFound) {
+          return { success: false, message: `Kunci Groq valid tapi model llama-3.3-70b-versatile / llama-3.1-8b-instant tidak tersedia di akun Anda.`, status: 404 };
+        }
         return {
           success: true,
           message: `Kunci Groq Valid! ${models.length} model aktif.${whisperFound ? ' Engine Whisper-large-v3-turbo siap digunakan.' : ''}`,
