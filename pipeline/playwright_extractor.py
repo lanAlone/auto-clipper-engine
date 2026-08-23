@@ -27,20 +27,29 @@ async def extract_youtube_stream(url: str, cookies_file: str = None) -> str:
             playwright_cookies = []
             with open(cookies_file, 'r', encoding='utf-8') as f:
                 for line in f:
-                    if not line.startswith('#') and line.strip():
-                        parts = line.strip().split('\t')
-                        if len(parts) >= 7:
-                            domain = parts[0]
-                            name = parts[5]
-                            value = parts[6]
-                            playwright_cookies.append({
-                                'name': name,
-                                'value': value,
-                                'domain': domain.replace('#HttpOnly_', ''),
-                                'path': '/'
-                            })
+                    if not line.strip() or line.strip().startswith('#') and not line.startswith('#HttpOnly_'):
+                        continue
+                    parts = line.strip().split('\t')
+                    if len(parts) >= 7:
+                        domain = parts[0]
+                        if domain.startswith('#HttpOnly_'):
+                            domain = domain[10:]
+                        path = parts[2]
+                        name = parts[5]
+                        value = parts[6]
+                        if not name:
+                            continue
+                        playwright_cookies.append({
+                            'name': name,
+                            'value': value,
+                            'domain': domain,
+                            'path': path
+                        })
             if playwright_cookies:
-                await context.add_cookies(playwright_cookies)
+                try:
+                    await context.add_cookies(playwright_cookies)
+                except Exception as e:
+                    print(f"[Playwright] Gagal menambahkan cookies, mengabaikan: {e}")
 
         page = await context.new_page()
         
