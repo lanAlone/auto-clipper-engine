@@ -316,6 +316,12 @@ def call_with_rotation(
     if not pool:
         raise RuntimeError("Belum ada provider/model LLM yang tersambung di akun Anda. Silakan sambungkan key di Tab Pengaturan.")
 
+    print(f"\n[LLM Router Debug] Active provider_ids before loop: {provider_ids}")
+    print(f"[LLM Router Debug] Final pool loaded (length: {len(pool)}):")
+    for p in pool:
+        print(f"  - {p.get('provider_id')} / {p.get('model_id')} (status: {p.get('status')})")
+    print("")
+
     attempt_errors = []
 
     for entry in pool:
@@ -355,7 +361,13 @@ def call_with_rotation(
             payload["response_format"] = {"type": "json_object"}
 
         try:
+            print(f"\n[LLM HTTP OUT] POST {url}")
+            print(f"[LLM HTTP OUT] Payload Model: {payload.get('model')}")
+            
             resp = requests.post(url, json=payload, headers=headers, timeout=45)
+            
+            print(f"[LLM HTTP IN] Status: {resp.status_code}")
+            print(f"[LLM HTTP IN] Raw Response (first 400 chars): {resp.text[:400]}")
             
             # Sukses
             if resp.status_code == 200:
