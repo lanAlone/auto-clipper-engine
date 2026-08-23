@@ -403,7 +403,7 @@ def call_with_rotation(
             "temperature": temperature,
             "max_tokens": max_tokens
         }
-        if json_mode and provider_id in ("groq", "openrouter", "gemini"):
+        if json_mode and provider_id in ("groq", "openrouter"):
             payload["response_format"] = {"type": "json_object"}
 
         try:
