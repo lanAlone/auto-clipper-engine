@@ -1,0 +1,37 @@
+name: Save User API Keys
+
+on:
+  repository_dispatch:
+    types: [save-keys]
+
+jobs:
+  save-keys:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install huggingface_hub cryptography
+
+      - name: Save Key to Hugging Face
+        env:
+          PYTHONPATH: .
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_KEYS_DATASET_REPO_ID: ${{ secrets.HF_KEYS_DATASET_REPO_ID }}
+          MASTER_ENCRYPTION_KEY: ${{ secrets.MASTER_ENCRYPTION_KEY }}
+        run: |
+          python pipeline/save_user_key.py \
+            --user_id "${{ github.event.client_payload.user_id }}" \
+            --provider_id "${{ github.event.client_payload.provider }}" \
+            --raw_key "${{ github.event.client_payload.raw_key }}"

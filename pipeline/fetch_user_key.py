@@ -42,6 +42,7 @@ def get_user_key(user_id: str, provider_id: str) -> str:
         # Cek khusus untuk Groq transkripsi
         if clean_provider == "groq" and user_data.get("groq_key_encrypted"):
             raw_key = decrypt_data(user_data["groq_key_encrypted"])
+            print(f"[Kredensial] Berhasil memuat key groq milik {clean_user} dari dataset (old format), panjang: {len(raw_key)} karakter")
             return raw_key
 
         # Cek di array providers
@@ -50,7 +51,9 @@ def get_user_key(user_id: str, provider_id: str) -> str:
             if p.get("provider_id", "").lower() == clean_provider:
                 enc_key = p.get("key_encrypted")
                 if enc_key:
-                    return decrypt_data(enc_key)
+                    raw_key = decrypt_data(enc_key)
+                    print(f"[Kredensial] Berhasil memuat key {clean_provider} milik {clean_user} dari dataset, panjang: {len(raw_key)} karakter")
+                    return raw_key
 
         # Jika provider adalah gemini, coba cari yang berawalan gemini atau google
         if "gemini" in clean_provider or "google" in clean_provider:
@@ -58,7 +61,9 @@ def get_user_key(user_id: str, provider_id: str) -> str:
                 if "gemini" in p.get("provider_id", "").lower() or "google" in p.get("provider_id", "").lower():
                     enc_key = p.get("key_encrypted")
                     if enc_key:
-                        return decrypt_data(enc_key)
+                        raw_key = decrypt_data(enc_key)
+                        print(f"[Kredensial] Berhasil memuat key {clean_provider} milik {clean_user} dari dataset, panjang: {len(raw_key)} karakter")
+                        return raw_key
                         
     except Exception as e:
         print(f"[Warning] Gagal membaca kredensial user {clean_user} dari dataset (Error: {e}). Fallback ke system env.")

@@ -276,20 +276,27 @@ def call_with_rotation(
     if "groq" not in provider_ids:
         groq_key = get_raw_key_fn("groq")
         if groq_key:
-            pool.append({
-                "provider_id": "groq",
-                "model_id": "llama-3.3-70b-versatile",
-                "status": "available",
-                "speed_tier": "fast",
-                "capabilities": ["chat", "vision"]
-            })
-            pool.append({
-                "provider_id": "groq",
-                "model_id": "llama-3.1-8b-instant",
-                "status": "available",
-                "speed_tier": "medium",
-                "capabilities": ["chat"]
-            })
+            try:
+                resp = requests.get("https://api.groq.com/openai/v1/models", headers={"Authorization": f"Bearer {groq_key.strip()}"}, timeout=10)
+                if resp.status_code == 200:
+                    api_models = [m.get("id") for m in resp.json().get("data", [])]
+                    # Filter only LLM models (e.g. llama, mixtral, gemma), exclude whisper
+                    llm_models = [m for m in api_models if "whisper" not in m.lower() and "tts" not in m.lower()]
+                    
+                    # Inject up to 5 available models into the pool
+                    for i, m in enumerate(llm_models[:5]):
+                        pool.append({
+                            "provider_id": "groq",
+                            "model_id": m,
+                            "status": "available",
+                            "speed_tier": "fast" if i == 0 else "medium",
+                            "capabilities": ["chat"]
+                        })
+                else:
+                    # Fallback if API fails
+                    pool.append({"provider_id": "groq", "model_id": "llama3-8b-8192", "status": "available", "speed_tier": "fast", "capabilities": ["chat"]})
+            except Exception:
+                pool.append({"provider_id": "groq", "model_id": "llama3-8b-8192", "status": "available", "speed_tier": "fast", "capabilities": ["chat"]})
 
     if "gemini" not in provider_ids:
         gemini_key = get_raw_key_fn("gemini")
