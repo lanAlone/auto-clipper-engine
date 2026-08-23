@@ -42,8 +42,7 @@ async def extract_youtube_stream(url: str, cookies_file: str = None) -> str:
                         playwright_cookies.append({
                             'name': name,
                             'value': value,
-                            'domain': domain,
-                            'path': path
+                            'url': f"https://www.youtube.com{path}" if path.startswith('/') else "https://www.youtube.com/"
                         })
             if playwright_cookies:
                 try:
