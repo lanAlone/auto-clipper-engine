@@ -65,6 +65,9 @@ def check_video_metadata(url: str, cookie_file: Optional[str] = None) -> Tuple[b
         "youtube:player_client=mweb"
     ]
 
+    import shutil
+    node_path = shutil.which("node") or "node"
+    
     for client_arg in clients:
         for use_proxy in [True, False]:
             cmd = [
@@ -72,8 +75,7 @@ def check_video_metadata(url: str, cookie_file: Optional[str] = None) -> Tuple[b
                 "--skip-download",
                 "--print", "%(duration)s|||%(title)s",
                 "--no-warnings",
-                "--js-runtimes", "node",
-                "--remote-components", "ejs:github",
+                "--js-runtimes", f"nodejs:{node_path}",
                 "--extractor-args", client_arg
             ]
             if use_proxy:
@@ -149,14 +151,16 @@ def download_audio_and_subtitles(
 
     print(f"[Downloader] Memproses video: '{title}' ({duration_sec:.1f} detik)...")
 
+    import shutil
+    node_path = shutil.which("node") or "node"
+
     base_args = [
         sys.executable, "-m", "yt_dlp",
         "--format", "bestaudio/best",
         "-o", audio_raw_template,
         "--no-playlist",
         "--force-ipv4",
-        "--js-runtimes", "node",
-        "--remote-components", "ejs:github"
+        "--js-runtimes", f"nodejs:{node_path}"
     ]
 
     tier_errors = []
