@@ -58,13 +58,6 @@ jobs:
           cd remotion
           npm install
 
-      - name: Write Cookie File
-        run: |
-          mkdir -p work
-          cat << 'EOF' > work/user_cookies.txt
-          ${{ github.event.client_payload.cookie_text }}
-          EOF
-
       - name: Execute Main Pipeline
         env:
           PYTHONPATH: .
@@ -72,10 +65,12 @@ jobs:
           HF_DATASET_REPO_ID: ${{ secrets.HF_DATASET_REPO_ID }}
           HF_KEYS_DATASET_REPO_ID: ${{ secrets.HF_KEYS_DATASET_REPO_ID }}
           MASTER_ENCRYPTION_KEY: ${{ secrets.MASTER_ENCRYPTION_KEY }}
-          GROQ_API_KEY: ${{ github.event.client_payload.groq_key || secrets.GROQ_API_KEY }}
-          GEMINI_API_KEY: ${{ github.event.client_payload.gemini_key || secrets.GEMINI_API_KEY }}
-          OPENROUTER_API_KEY: ${{ github.event.client_payload.openrouter_key || secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
+          # Cookie and API Keys from payload are securely read by Python from $GITHUB_EVENT_PATH
+          mkdir -p work
           python pipeline/main.py \
             --job_id "${{ github.event.client_payload.job_id }}" \
             --user_id "${{ github.event.client_payload.user_id }}" \

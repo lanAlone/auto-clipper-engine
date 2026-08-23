@@ -68,7 +68,25 @@ def get_user_key(user_id: str, provider_id: str) -> str:
     except Exception as e:
         print(f"[Warning] Gagal membaca kredensial user {clean_user} dari dataset (Error: {e}). Fallback ke system env.")
 
-    # FALLBACK KE SYSTEM ENVIRONMENT VARIABLES
+    # FALLBACK KE SYSTEM ENVIRONMENT VARIABLES ATAU PAYLOAD (SECURE)
+    # 1. Coba baca aman dari GITHUB_EVENT_PATH (menghindari bocor di log Actions)
+    event_path = os.getenv("GITHUB_EVENT_PATH")
+    if event_path and os.path.exists(event_path):
+        try:
+            with open(event_path, "r", encoding="utf-8") as f:
+                event_data = json.load(f)
+            payload = event_data.get("client_payload", {})
+            
+            if clean_provider == "groq" and payload.get("groq_key"):
+                return payload.get("groq_key")
+            elif ("gemini" in clean_provider or "google" in clean_provider) and payload.get("gemini_key"):
+                return payload.get("gemini_key")
+            elif "openrouter" in clean_provider and payload.get("openrouter_key"):
+                return payload.get("openrouter_key")
+        except Exception:
+            pass
+
+    # 2. Coba dari System Env (jika tersedia lewat secrets)
     if clean_provider == "groq":
         system_key = os.environ.get("GROQ_API_KEY")
         if system_key:
@@ -93,7 +111,22 @@ def get_user_cookie_file(user_id: str) -> Optional[str]:
     token, repo_id = get_hf_credentials()
     clean_user = user_id.strip()
     
-    # 1. Cek apakah ada file cookie langsung dari payload (dikirim oleh frontend)
+    # 1. Coba baca aman dari GITHUB_EVENT_PATH payload (menghindari bocor di log Actions heredoc)
+    event_path = os.getenv("GITHUB_EVENT_PATH")
+    if event_path and os.path.exists(event_path):
+        try:
+            with open(event_path, "r", encoding="utf-8") as f:
+                event_data = json.load(f)
+            payload_cookie = event_data.get("client_payload", {}).get("cookie_text", "").strip()
+            if payload_cookie and ("# Netscape" in payload_cookie or ".youtube.com" in payload_cookie):
+                os.makedirs("work", exist_ok=True)
+                with open("work/user_cookies.txt", "w", encoding="utf-8") as f:
+                    f.write(payload_cookie)
+                return "work/user_cookies.txt"
+        except Exception:
+            pass
+
+    # 1b. Cek fallback file jika sudah ada (mungkin dari test lokal)
     if os.path.exists("work/user_cookies.txt") and os.path.getsize("work/user_cookies.txt") > 10:
         with open("work/user_cookies.txt", "r", encoding="utf-8") as f:
             raw_text = f.read().strip()

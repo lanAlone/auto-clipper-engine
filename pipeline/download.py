@@ -80,7 +80,7 @@ def check_video_metadata(url: str, cookie_file: Optional[str] = None) -> Tuple[b
             ]
             if use_proxy:
                 cmd.extend(["--proxy", WARP_PROXY])
-            if cookie_file and os.path.exists(cookie_file):
+            if cookie_file and os.path.exists(cookie_file) and "ios" not in client_arg:
                 cmd.extend(["--cookies", cookie_file])
             cmd.append(url)
 
@@ -184,7 +184,7 @@ def download_audio_and_subtitles(
         if proxy_opts:
             cmd.extend(["--proxy", proxy_opts[0]])
         cmd.extend(["--extractor-args", client_arg])
-        if user_cookie_file:
+        if user_cookie_file and "ios" not in client_arg:
             cmd.extend(["--cookies", user_cookie_file])
         cmd.append(url)
 
@@ -196,7 +196,7 @@ def download_audio_and_subtitles(
             print(f"[Downloader] SUKSES mengunduh audio via {label}!")
             break
         else:
-            tier_errors.append(f"{label}: {err[-300:].strip().replace(chr(10), ' ')}")
+            tier_errors.append(f"{label}: {err.strip().replace(chr(10), ' ')}")
 
     # Fallback to Playwright Embed Cookies if still blocked
     if not download_success:
