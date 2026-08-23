@@ -72,6 +72,10 @@ def get_user_key(user_id: str, provider_id: str) -> str:
         system_key = os.environ.get("GEMINI_API_KEY")
         if system_key:
             return system_key
+    elif "openrouter" in clean_provider:
+        system_key = os.environ.get("OPENROUTER_API_KEY")
+        if system_key:
+            return system_key
 
     return ""
 

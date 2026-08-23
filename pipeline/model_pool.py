@@ -284,6 +284,15 @@ def call_with_rotation(
                 "speed_tier": "fast",
                 "capabilities": ["chat", "vision"]
             })
+        openrouter_key = get_raw_key_fn("openrouter")
+        if openrouter_key:
+            pool.append({
+                "provider_id": "openrouter",
+                "model_id": "deepseek/deepseek-chat",
+                "status": "available",
+                "speed_tier": "fast",
+                "capabilities": ["chat"]
+            })
 
     if not pool:
         raise RuntimeError("Belum ada provider/model LLM yang tersambung di akun Anda. Silakan sambungkan key di Tab Pengaturan.")

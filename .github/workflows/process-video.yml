@@ -74,6 +74,7 @@ jobs:
           MASTER_ENCRYPTION_KEY: ${{ secrets.MASTER_ENCRYPTION_KEY }}
           GROQ_API_KEY: ${{ github.event.client_payload.groq_key || secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ github.event.client_payload.gemini_key || secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ github.event.client_payload.openrouter_key || secrets.OPENROUTER_API_KEY }}
         run: |
           python pipeline/main.py \
             --job_id "${{ github.event.client_payload.job_id }}" \
