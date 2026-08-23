@@ -486,8 +486,8 @@ class AutoClipperApp {
     let groqKey = savedKeys["groq"] ? savedKeys["groq"].key : "";
     let geminiKey = savedKeys["gemini"] ? savedKeys["gemini"].key : "";
 
-    if (!groqKey) {
-      alert("⚠️ Kunci API Groq Wajib Diisi!\n\nSistem membutuhkan API Key Groq untuk memproses transkripsi video. Silakan masuk ke menu 'Pengaturan Kunci API' untuk memasukkannya.");
+    if (!groqKey && !geminiKey) {
+      alert("⚠️ Kunci API Wajib Diisi!\n\nSistem membutuhkan setidaknya satu API Key (Groq atau Gemini) untuk memproses AI. Silakan masuk ke menu 'Pengaturan Kunci API' untuk memasukkannya.");
       return;
     }
 
