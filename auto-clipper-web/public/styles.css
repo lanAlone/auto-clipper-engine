@@ -1387,3 +1387,28 @@ body.modal-open {
   margin-bottom: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+
+/* STRICT VIEW ISOLATION */
+#view-landing {
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+#view-dashboard {
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  z-index: 100;
+  display: flex;
+}
+
+#view-dashboard[style*="display: none"] {
+  display: none !important;
+}
+
+#view-landing[style*="display: none"] {
+  display: none !important;
+}
