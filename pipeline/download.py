@@ -150,7 +150,8 @@ def download_audio_and_subtitles(
         sys.executable, "-m", "yt_dlp",
         "--format", "bestaudio/best",
         "-o", audio_raw_template,
-        "--no-playlist"
+        "--no-playlist",
+        "--force-ipv4"
     ]
 
     tier_errors = []
