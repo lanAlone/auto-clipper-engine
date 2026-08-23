@@ -14,7 +14,7 @@
   <!-- Canvas Confetti library for high-tier celebration micro-interactions -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=9.0" />
+  <link rel="stylesheet" href="styles.css?v=10.0" />
 </head>
 <body>
 
@@ -147,7 +147,6 @@
                 </div>
               </div>
             </div>
-          </div>
           </div>
         </section>
 
@@ -883,9 +882,47 @@
               <div id="cookie-feedback-msg"></div>
             </div>
           </div>
-          </div>
 
-          
+          <!-- TAB 4: ✏️ BRAND VOICE & MEDSOS -->
+          <div id="dash-brand" class="dash-tab-pane" style="display: none;">
+            <div class="chunk-card spotlight-card">
+              <h3 style="font-size: 18px; color: #FFFFFF; margin-bottom: 6px;">Brand Voice & Generator Medsos</h3>
+              <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Atur gaya bahasa dan nada komunikasi brand Anda untuk caption dan hook yang dihasilkan AI.</p>
+
+              <div class="form-group">
+                <label class="form-label">Nama Brand / Channel:</label>
+                <input type="text" id="brand-name" class="form-control" placeholder="Contoh: SUARA BERKELAS" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Gaya Bahasa Brand:</label>
+                <select id="brand-tone" class="form-control">
+                  <option value="casual">Santai & Gaul (Gen Z / Millennial)</option>
+                  <option value="professional">Profesional & Berwibawa</option>
+                  <option value="motivational" selected>Motivasional & Inspiratif</option>
+                  <option value="educational">Edukatif & Informatif</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Platform Target Utama:</label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <label style="display: flex; align-items: center; gap: 6px; color: #E2E8F0; font-size: 13.5px; cursor: pointer;">
+                    <input type="checkbox" checked /> YouTube Shorts
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; color: #E2E8F0; font-size: 13.5px; cursor: pointer;">
+                    <input type="checkbox" checked /> TikTok
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; color: #E2E8F0; font-size: 13.5px; cursor: pointer;">
+                    <input type="checkbox" /> Instagram Reels
+                  </label>
+                </div>
+              </div>
+
+              <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 12px; padding: 14px; margin-top: 16px;">
+                <p style="color: #94A3B8; font-size: 12.5px; margin: 0; line-height: 1.6;">💡 Konfigurasi brand voice akan digunakan oleh AI untuk menghasilkan hook, caption, dan hashtag yang selaras dengan identitas channel Anda.</p>
+              </div>
+            </div>
           </div>
 
           <!-- TAB 5: 💬 BANTUAN & LAPOR -->
@@ -902,7 +939,12 @@
                 </p>
               </div>
 
-              <button class="btn btn-primary" onclick="app.sendFeedback()">Buka Email Client & Kirim Laporan</button>
+              <div class="form-group">
+                <label class="form-label">Jelaskan Kendala atau Masukan Anda:</label>
+                <textarea id="help-message" class="form-control" rows="4" placeholder="Deskripsikan masalah yang Anda temui atau saran untuk perbaikan..."></textarea>
+              </div>
+
+              <button class="btn btn-primary" onclick="app.sendFeedback()">✉️ Buka Email Client & Kirim Laporan</button>
               <div id="help-feedback-result" style="margin-top: 16px;"></div>
             </div>
           </div>
@@ -994,6 +1036,6 @@
 
   </div> <!-- End content-wrapper -->
 
-  <script src="app.js?v=9.0"></script>
+  <script src="app.js?v=10.0"></script>
 </body>
 </html>
