@@ -161,18 +161,12 @@ def download_audio_and_subtitles(
     # Strategy: Loop through WARP proxy & direct with different player clients
     # With yt-dlp >= 2025, tv, ios, and mweb are the most resilient against botguard
     strategies = [
-        # 1. WARP Proxy + TV Client
-        ("Tier 1 (WARP + TV Client)", [WARP_PROXY], "youtube:player_client=tv"),
-        # 2. WARP Proxy + Android Client
-        ("Tier 2 (WARP + Android)", [WARP_PROXY], "youtube:player_client=android"),
-        # 3. WARP Proxy + iOS Client
-        ("Tier 3 (WARP + iOS)", [WARP_PROXY], "youtube:player_client=ios"),
-        # 4. Direct + default
-        ("Tier 4 (Direct + Default)", [], "youtube:player_client=default"),
-        # 5. Direct + Android
-        ("Tier 5 (Direct + Android)", [], "youtube:player_client=android"),
-        # 6. MWEB Client fallback
-        ("Tier 6 (MWEB Client)", [], "youtube:player_client=mweb")
+        ("Tier 1 (WARP + iOS)", [WARP_PROXY], "youtube:player_client=ios"),
+        ("Tier 2 (WARP + Android Creator)", [WARP_PROXY], "youtube:player_client=android_creator"),
+        ("Tier 3 (WARP + Web Creator)", [WARP_PROXY], "youtube:player_client=web_creator"),
+        ("Tier 4 (Direct + iOS)", [], "youtube:player_client=ios"),
+        ("Tier 5 (Direct + Android Creator)", [], "youtube:player_client=android_creator"),
+        ("Tier 6 (Direct + Default)", [], "youtube:player_client=default")
     ]
 
     for label, proxy_opts, client_arg in strategies:
@@ -274,12 +268,12 @@ def download_clip_section(
     print(f"[Downloader] Mengunduh segmen video '{clip_id}': rentang {ts_start} -> {ts_end}...")
 
     strategies = [
-        (WARP_PROXY, "youtube:player_client=tv"),
-        (WARP_PROXY, "youtube:player_client=android"),
         (WARP_PROXY, "youtube:player_client=ios"),
-        (None, "youtube:player_client=default"),
-        (None, "youtube:player_client=android"),
-        (None, "youtube:player_client=mweb")
+        (WARP_PROXY, "youtube:player_client=android_creator"),
+        (WARP_PROXY, "youtube:player_client=web_creator"),
+        (None, "youtube:player_client=ios"),
+        (None, "youtube:player_client=android_creator"),
+        (None, "youtube:player_client=web_creator")
     ]
 
     for proxy, client_arg in strategies:
