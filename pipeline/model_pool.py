@@ -334,7 +334,7 @@ def call_with_rotation(
         if gemini_key:
             pool.append({
                 "provider_id": "gemini",
-                "model_id": "gemini-flash-latest",
+                "model_id": "gemini-1.5-flash",
                 "status": "available",
                 "speed_tier": "fast",
                 "capabilities": ["chat", "vision"]
@@ -343,13 +343,14 @@ def call_with_rotation(
     if "openrouter" not in provider_ids:
         openrouter_key = get_raw_key_fn("openrouter")
         if openrouter_key:
-            pool.append({
-                "provider_id": "openrouter",
-                "model_id": "deepseek/deepseek-chat",
-                "status": "available",
-                "speed_tier": "fast",
-                "capabilities": ["chat"]
-            })
+            for m in ["meta-llama/llama-3.3-70b-instruct:free", "google/gemini-2.0-flash-lite-preview-02-05:free", "mistralai/mistral-nemo:free", "deepseek/deepseek-chat"]:
+                pool.append({
+                    "provider_id": "openrouter",
+                    "model_id": m,
+                    "status": "available",
+                    "speed_tier": "fast",
+                    "capabilities": ["chat"]
+                })
 
     if not pool:
         raise RuntimeError("Belum ada provider/model LLM yang tersambung di akun Anda. Silakan sambungkan key di Tab Pengaturan.")
