@@ -72,6 +72,8 @@ def check_video_metadata(url: str, cookie_file: Optional[str] = None) -> Tuple[b
                 "--skip-download",
                 "--print", "%(duration)s|||%(title)s",
                 "--no-warnings",
+                "--js-runtimes", "node",
+                "--remote-components", "ejs:github",
                 "--extractor-args", client_arg
             ]
             if use_proxy:
@@ -152,7 +154,9 @@ def download_audio_and_subtitles(
         "--format", "bestaudio/best",
         "-o", audio_raw_template,
         "--no-playlist",
-        "--force-ipv4"
+        "--force-ipv4",
+        "--js-runtimes", "node",
+        "--remote-components", "ejs:github"
     ]
 
     tier_errors = []
@@ -188,7 +192,7 @@ def download_audio_and_subtitles(
             print(f"[Downloader] SUKSES mengunduh audio via {label}!")
             break
         else:
-            tier_errors.append(f"{label}: {err[-100:].strip()}")
+            tier_errors.append(f"{label}: {err[-300:].strip().replace(chr(10), ' ')}")
 
     # Fallback to Playwright Embed Cookies if still blocked
     if not download_success:
@@ -299,6 +303,8 @@ def download_clip_section(
             "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
             "--merge-output-format", "mp4",
             "--force-keyframes-at-cuts",
+            "--js-runtimes", "node",
+            "--remote-components", "ejs:github",
             "--extractor-args", client_arg,
             "-o", out_mp4_path
         ]

@@ -47,7 +47,7 @@ jobs:
       - name: Install Python Dependencies
         run: |
           pip install --upgrade pip
-          pip install -U https://github.com/yt-dlp/yt-dlp/archive/master.zip youtube-transcript-api huggingface_hub requests cryptography playwright
+          pip install -U "yt-dlp[default]" yt-dlp-ejs youtube-transcript-api huggingface_hub requests cryptography playwright
 
       - name: Install Playwright Browsers (for Anti-Bot Stealth)
         run: |
