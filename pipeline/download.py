@@ -75,7 +75,7 @@ def check_video_metadata(url: str, cookie_file: Optional[str] = None) -> Tuple[b
                 "--skip-download",
                 "--print", "%(duration)s|||%(title)s",
                 "--no-warnings",
-                "--js-runtimes", f"nodejs:{node_path}",
+                "--js-runtimes", f"node:{node_path}",
                 "--extractor-args", client_arg
             ]
             if use_proxy:
@@ -160,7 +160,7 @@ def download_audio_and_subtitles(
         "-o", audio_raw_template,
         "--no-playlist",
         "--force-ipv4",
-        "--js-runtimes", f"nodejs:{node_path}"
+        "--js-runtimes", f"node:{node_path}"
     ]
 
     tier_errors = []
@@ -171,10 +171,10 @@ def download_audio_and_subtitles(
     # With yt-dlp >= 2025, tv, ios, and mweb are the most resilient against botguard
     strategies = [
         ("Tier 1 (WARP + iOS)", [WARP_PROXY], "youtube:player_client=ios"),
-        ("Tier 2 (WARP + Android Creator)", [WARP_PROXY], "youtube:player_client=android_creator"),
-        ("Tier 3 (WARP + Web Creator)", [WARP_PROXY], "youtube:player_client=web_creator"),
+        ("Tier 2 (WARP + Android Creator)", [WARP_PROXY], "youtube:player_client=android_creator,android"),
+        ("Tier 3 (WARP + Web Creator)", [WARP_PROXY], "youtube:player_client=web_creator,web"),
         ("Tier 4 (Direct + iOS)", [], "youtube:player_client=ios"),
-        ("Tier 5 (Direct + Android Creator)", [], "youtube:player_client=android_creator"),
+        ("Tier 5 (Direct + Android Creator)", [], "youtube:player_client=android_creator,android"),
         ("Tier 6 (Direct + Default)", [], "youtube:player_client=default")
     ]
 
