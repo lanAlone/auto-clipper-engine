@@ -83,7 +83,15 @@ def get_user_cookie_file(user_id: str) -> Optional[str]:
     """
     token, repo_id = get_hf_credentials()
     clean_user = user_id.strip()
+    
+    # 1. Cek apakah ada file cookie langsung dari payload (dikirim oleh frontend)
+    if os.path.exists("work/user_cookies.txt") and os.path.getsize("work/user_cookies.txt") > 10:
+        with open("work/user_cookies.txt", "r", encoding="utf-8") as f:
+            raw_text = f.read().strip()
+        if "# Netscape" in raw_text or ".youtube.com" in raw_text:
+            return "work/user_cookies.txt"
 
+    # 2. Jika tidak ada, coba ambil dari dataset
     try:
         local_enc_path = hf_hub_download(
             repo_id=repo_id,

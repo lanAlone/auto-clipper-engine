@@ -58,6 +58,13 @@ jobs:
           cd remotion
           npm install
 
+      - name: Write Cookie File
+        run: |
+          mkdir -p work
+          cat << 'EOF' > work/user_cookies.txt
+          ${{ github.event.client_payload.cookie_text }}
+          EOF
+
       - name: Execute Main Pipeline
         env:
           PYTHONPATH: .
