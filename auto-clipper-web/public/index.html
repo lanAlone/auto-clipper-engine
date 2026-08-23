@@ -14,7 +14,7 @@
   <!-- Canvas Confetti library for high-tier celebration micro-interactions -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=6.0" />
+  <link rel="stylesheet" href="styles.css?v=7.0" />
 </head>
 <body>
 
@@ -108,30 +108,35 @@
                 </div>
               </div>
 
-              <div class="simulator-stage">
-                <!-- Video Mockup Display -->
-                <div id="sim-video-box" class="sim-video-display vertical-mode">
+                            <div class="simulator-stage" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; align-items: center;">
+                <!-- Video Mockup Display with Real YouTube Podcast Visuals -->
+                <div id="sim-video-box" class="sim-video-display vertical-mode" style="position: relative; overflow: hidden; border-radius: 14px; min-height: 320px; display: flex; align-items: center; justify-content: center; background: #000; box-shadow: 0 12px 36px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1);">
+                  <!-- Real Podcast Backdrop Image -->
+                  <img id="sim-video-img" src="https://i.ytimg.com/vi/pHK2UxwfaL0/hqdefault.jpg" alt="SUARA BERKELAS Podcast Preview" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65) contrast(1.1); transition: all 0.4s ease;" />
+                  <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.7) 100%);"></div>
+                  
                   <div class="laser-scanner"></div>
-                  <div style="text-align: center; padding: 20px; z-index: 2;">
-                    <div id="sim-subtitle-badge" class="kinetic-subtitle-box" style="font-size: 14.5px; font-weight: 800; color: #FDE047; font-family: 'Space Grotesk', sans-serif; background: rgba(0,0,0,0.85); padding: 7px 16px; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.8); display: inline-block; transition: all 0.3s ease;">
-                      "RAHASIA BESAR INI..."
+
+                  <div style="position: relative; text-align: center; padding: 20px; z-index: 2; width: 100%;">
+                    <div id="sim-subtitle-badge" class="kinetic-subtitle-box" style="font-size: 15px; font-weight: 800; color: #FDE047; font-family: 'Space Grotesk', sans-serif; background: rgba(0,0,0,0.85); padding: 8px 18px; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.9); display: inline-block; transition: all 0.3s ease; border-left: 4px solid #FDE047;">
+                      "MOTIVASI ITU PALSU, DISIPLIN ITU KEPUTUSAN!"
                     </div>
-                    <div id="sim-style-desc" style="font-size: 11.5px; color: #C084FC; margin-top: 10px; font-weight: 600;">
-                      ✨ Subtitle Gaya MrBeast (Pop-in Dynamic)
+                    <div id="sim-style-desc" style="font-size: 11.5px; color: #C084FC; margin-top: 12px; font-weight: 700; text-shadow: 0 2px 6px rgba(0,0,0,0.9);">
+                      ✨ Subtitle Gaya MrBeast (Pop-in Dynamic) • SUARA BERKELAS
                     </div>
                   </div>
                 </div>
 
                 <!-- Analysis Panel -->
-                <div style="text-align: left;">
+                <div style="text-align: left; padding: 10px;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                     <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); font-weight: 700;">Analisis AI Runner</span>
-                    <span style="font-size: 11.5px; background: rgba(245, 158, 11, 0.12); color: #FBBF24; padding: 4px 10px; border-radius: 20px; font-weight: 800;">🔥 9.4/10 Viral Score</span>
+                    <span style="font-size: 11.5px; background: rgba(245, 158, 11, 0.15); color: #FBBF24; padding: 4px 12px; border-radius: 20px; font-weight: 800; border: 1px solid rgba(245, 158, 11, 0.3);">🔥 9.7/10 Viral Score</span>
                   </div>
 
-                  <h3 style="font-size: 17px; font-weight: 700; margin-bottom: 8px; color: #FFFFFF;">Deteksi Momen Otomatis</h3>
+                  <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #FFFFFF;">Deteksi Momen: "Mindset Disiplin"</h3>
                   <p style="color: var(--text-muted); font-size: 13.5px; line-height: 1.6; margin-bottom: 18px;">
-                    AI mengenali kalimat pembuka kontroversial pada menit <b>04:12 – 04:58</b> dan memotongnya tepat di jeda nafas (Potongan Suara Halus 0.2s).
+                    AI mendeteksi kalimat pembuka kuat dari podcast <b>"Cara Jadi Manusia Disiplin & Percaya Diri" (SUARA BERKELAS)</b> pada menit <b>03:15 – 03:57</b> dan menyelaraskannya ke jeda kata alami (Word-Level Snapping 0.2s).
                   </p>
 
                   <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -142,6 +147,7 @@
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </section>
 
@@ -988,6 +994,6 @@
 
   </div> <!-- End content-wrapper -->
 
-  <script src="app.js?v=6.0"></script>
+  <script src="app.js?v=7.0"></script>
 </body>
 </html>
