@@ -480,6 +480,17 @@ class AutoClipperApp {
       return;
     }
 
+    // Removed cookie check due to static hosting
+    let localCookie = localStorage.getItem("autoclipper_cookie");
+    let savedKeys = JSON.parse(localStorage.getItem("autoclipper_keys") || "{}");
+    let groqKey = savedKeys["groq"] ? savedKeys["groq"].key : "";
+    let geminiKey = savedKeys["gemini"] ? savedKeys["gemini"].key : "";
+
+    if (!groqKey) {
+      alert("⚠️ Kunci API Groq Wajib Diisi!\n\nSistem membutuhkan API Key Groq untuk memproses transkripsi video. Silakan masuk ke menu 'Pengaturan Kunci API' untuk memasukkannya.");
+      return;
+    }
+
     if (btn) {
       btn.disabled = true;
       btn.innerText = "⏳ MEMULAI RUNNER CLOUD GITHUB ACTIONS...";
@@ -516,7 +527,9 @@ class AutoClipperApp {
             duration_mode: duration,
             clip_count: clipCount,
             crop_mode: cropMode,
-            caption_style: captionStyle
+            caption_style: captionStyle,
+            groq_key: groqKey,
+            gemini_key: geminiKey
           }
         })
       });

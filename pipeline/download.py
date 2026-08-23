@@ -13,6 +13,7 @@ from typing import Tuple, Optional, List, Dict, Any
 
 from pipeline.fetch_user_key import get_user_cookie_file
 from pipeline.stealth_session import generate_youtube_session_cookies
+from pipeline.invidious_proxy import download_audio_via_invidious, download_video_section_via_invidious
 
 
 MAX_DURATION_SECONDS = 10800  # 3 Jam Penuh (Podcast Panjang)
@@ -210,6 +211,14 @@ def download_audio_and_subtitles(
                 raw_audio_path = raw_files[0]
                 print("[Downloader] SUKSES mengunduh audio via Playwright Embed Session!")
 
+    # Fallback to Invidious Proxy Stream (Tier 7 - Ultimate Cloud Bypass)
+    if not download_success:
+        print("[Downloader] Mencoba Tier 7: Invidious API Proxy Stream (Bypass 403)...")
+        raw_audio_path = os.path.join(output_dir, f"{video_id}_raw_proxy.m4a")
+        if download_audio_via_invidious(video_id, raw_audio_path):
+            download_success = True
+            print("[Downloader] SUKSES mengunduh audio via Invidious Proxy Stream!")
+            
     if not download_success:
         err_msg = " | ".join(tier_errors)
         raise RuntimeError(f"Gagal mengunduh audio stream dari YouTube ({err_msg}).")
@@ -293,4 +302,10 @@ def download_clip_section(
             print(f"[Downloader] Sukses mengunduh segmen {clip_id} (Proxy: {bool(proxy)}, Client: {client_arg})!")
             return out_mp4_path
 
-    raise RuntimeError(f"Gagal mengunduh klip segmen {clip_id} setelah mencoba seluruh strategi WARP & Direct.")
+    # Fallback Tier 7 untuk Video
+    print(f"[Downloader] Mencoba Tier 7 untuk segmen {clip_id}: Invidious Proxy Video Stream...")
+    if download_video_section_via_invidious(video_id, start_sec, end_sec, out_mp4_path):
+        print(f"[Downloader] Sukses mengunduh segmen {clip_id} via Invidious Proxy!")
+        return out_mp4_path
+
+    raise RuntimeError(f"Gagal mengunduh klip segmen {clip_id} setelah mencoba seluruh strategi WARP, Direct, dan Proxy.")
