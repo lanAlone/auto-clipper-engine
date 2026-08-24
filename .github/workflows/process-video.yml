@@ -73,6 +73,7 @@ jobs:
       - name: Execute Main Pipeline
         env:
           PYTHONPATH: .
+          PYTHONUNBUFFERED: 1
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_DATASET_REPO_ID: ${{ secrets.HF_DATASET_REPO_ID }}
           HF_KEYS_DATASET_REPO_ID: ${{ secrets.HF_KEYS_DATASET_REPO_ID }}
