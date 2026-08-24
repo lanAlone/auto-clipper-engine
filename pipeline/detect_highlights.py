@@ -10,15 +10,22 @@ from typing import Dict, Any, List, Optional, Tuple
 from pipeline.llm_router import call_llm_json
 
 
-def format_transcript_for_llm(transcript_dict: Dict[str, Any], max_char_limit: int = 250000) -> str:
+def format_transcript_for_llm(transcript_dict: Dict[str, Any], start_sec_limit: float = 0.0, end_sec_limit: float = 600.0) -> str:
     """
-    Mengubah array segmen transkrip menjadi teks ringkas ber-timestamp [MM:SS]
-    untuk menghemat token input LLM secara signifikan.
+    Mengubah array segmen transkrip menjadi teks ringkas ber-timestamp [MM:SS].
+    Difilter berdasarkan rentang waktu (default 10 menit) untuk menghindari limit token LLM.
     """
     segments = transcript_dict.get("segments", [])
     lines = []
     for s in segments:
         start_sec = s.get("start", 0.0)
+        
+        # Hanya ambil segmen di dalam rentang chunk
+        if start_sec >= end_sec_limit:
+            continue
+        if start_sec < start_sec_limit:
+            continue
+            
         mins = int(start_sec // 60)
         secs = int(start_sec % 60)
         text = s.get("text", "").strip()
@@ -26,8 +33,6 @@ def format_transcript_for_llm(transcript_dict: Dict[str, Any], max_char_limit: i
             lines.append(f"[{mins:02d}:{secs:02d}] {text}")
 
     full_text = "\n".join(lines)
-    if len(full_text) > max_char_limit:
-        return full_text[:max_char_limit] + "\n...[transkrip dipotong untuk batas konteks]..."
     return full_text
 
 
@@ -97,23 +102,47 @@ def detect_highlights(
     elif target_duration_mode == "long_60_90":
         duration_guide = "60 sampai 90 detik (mendalam, cerita tuntas)"
 
-    formatted_transcript = format_transcript_for_llm(transcript_dict)
-
     system_prompt = (
         "Anda adalah AI Produser Konten Video Pendek (Short-Form Content Producer) kelas dunia. "
-        "Tugas Anda adalah menganalisis transkrip video panjang dan menemukan momen-momen emas terbaik "
+        "Tugas Anda adalah menganalisis potongan transkrip video (chunk) dan menemukan momen-momen emas terbaik "
         "yang memiliki potensi retensi tinggi, hook awal yang kuat, dan pesan yang berdiri sendiri (self-contained)."
     )
 
-    user_prompt = f"""Berikut adalah transkrip video YouTube berdurasi {total_duration:.1f} detik:
+    chunk_size_sec = 600.0  # 10 menit per chunk
+    current_start = 0.0
+    
+    raw_candidates = []
+    final_llm_used = None
 
---- TRANSKRIP LENGKAP ---
+    print(f"[Detect Highlights] Memulai pencarian highlight per {int(chunk_size_sec/60)} menit untuk video {total_duration} detik...")
+
+    while current_start < total_duration and len(raw_candidates) < requested_clip_count:
+        current_end = min(current_start + chunk_size_sec, total_duration)
+        
+        formatted_transcript = format_transcript_for_llm(
+            transcript_dict, 
+            start_sec_limit=current_start, 
+            end_sec_limit=current_end
+        )
+        
+        # Jika chunk ini kosong teksnya, lanjut ke chunk berikutnya
+        if not formatted_transcript.strip():
+            current_start += chunk_size_sec
+            continue
+            
+        clips_needed = requested_clip_count - len(raw_candidates)
+
+        user_prompt = f"""Berikut adalah potongan transkrip video YouTube dari menit {int(current_start//60)} sampai {int(current_end//60)}:
+
+--- TRANSKRIP CHUNK ---
 {formatted_transcript}
--------------------------
+-----------------------
 
 TUGAS ANDA:
-Pilihlah tepat {requested_clip_count} momen potongan klip terbaik untuk dijadikan video vertikal (Shorts/Reels/TikTok).
+Pilihlah hingga maksimal {clips_needed} momen potongan klip terbaik dari teks di atas untuk dijadikan video vertikal.
 Durasi tiap klip yang diinginkan: {duration_guide}.
+
+Jika teks di atas tidak memiliki momen yang cukup menarik, Anda boleh mengembalikan kurang dari {clips_needed} klip atau bahkan list kosong [].
 
 Setiap klip HARUS:
 1. Memiliki 'hook' kuat di 3-5 detik awal.
@@ -125,7 +154,7 @@ Kembalikan HANYA format JSON valid berikut tanpa pembuka/penutup markdown:
   "video_id": "{video_id}",
   "candidates": [
     {{
-      "clip_id": "c1",
+      "clip_id": "c_tmp",
       "start": 120.0,
       "end": 168.5,
       "title": "Judul Menarik Singkat",
@@ -135,17 +164,33 @@ Kembalikan HANYA format JSON valid berikut tanpa pembuka/penutup markdown:
   ]
 }}"""
 
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt}
-    ]
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
 
-    print(f"[Detect Highlights] Mengirim transkrip ke model pool untuk user '{user_id}'...")
-    parsed_json, llm_used = call_llm_json(user_id=user_id, messages=messages, temperature=0.4)
-
-    raw_candidates = parsed_json.get("candidates", [])
-    if not raw_candidates and isinstance(parsed_json, list):
-        raw_candidates = parsed_json
+        print(f"[Detect Highlights] Mengirim chunk transkrip ({int(current_start)}s - {int(current_end)}s) ke model pool...")
+        try:
+            parsed_json, llm_used = call_llm_json(user_id=user_id, messages=messages, temperature=0.4)
+            final_llm_used = llm_used
+            
+            chunk_candidates = parsed_json.get("candidates", [])
+            if not chunk_candidates and isinstance(parsed_json, list):
+                chunk_candidates = parsed_json
+                
+            if chunk_candidates:
+                print(f"[Detect Highlights] Menemukan {len(chunk_candidates)} klip potensial di chunk ini.")
+                raw_candidates.extend(chunk_candidates)
+            else:
+                print(f"[Detect Highlights] Tidak ada klip potensial di chunk ini, lanjut mencari...")
+                
+        except Exception as e:
+            print(f"[Detect Highlights] Gagal memproses chunk {int(current_start)}s - {int(current_end)}s: {e}")
+            
+        current_start += chunk_size_sec
+        
+    if final_llm_used is None:
+        final_llm_used = {"provider_id": "unknown", "model_id": "unknown"}
 
     snapped_candidates = []
     for idx, c in enumerate(raw_candidates):
@@ -194,5 +239,5 @@ Kembalikan HANYA format JSON valid berikut tanpa pembuka/penutup markdown:
         "candidates": snapped_candidates
     }
 
-    print(f"[Detect Highlights] Berhasil mendeteksi {len(snapped_candidates)} klip menggunakan {llm_used['provider_id']} ({llm_used['model_id']}).")
-    return final_clips_dict, llm_used
+    print(f"[Detect Highlights] Berhasil mendeteksi total {len(snapped_candidates)} klip menggunakan {final_llm_used['provider_id']} ({final_llm_used['model_id']}).")
+    return final_clips_dict, final_llm_used
