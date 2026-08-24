@@ -379,7 +379,7 @@ def call_with_rotation(
             )
 
         spec = get_provider_spec(provider_id)
-        if not spec or spec.adapter != "openai_compatible":
+        if not spec or spec.adapter not in ["openai_compatible", "gemini_native"]:
             continue
 
         raw_key = get_raw_key_fn(provider_id)
@@ -391,20 +391,43 @@ def call_with_rotation(
             attempt_errors.append(f"{provider_id}/{model_id}: API key tidak ditemukan")
             continue
 
-        url = f"{spec.base_url.rstrip('/')}{spec.chat_path}"
-        headers = {
-            "Authorization": f"Bearer {raw_key.strip()}",
-            "Content-Type": "application/json",
-            "User-Agent": "AutoClipper-Engine/2.1"
-        }
-        payload = {
-            "model": model_id,
-            "messages": messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens
-        }
-        if json_mode and provider_id in ("groq", "openrouter"):
-            payload["response_format"] = {"type": "json_object"}
+        if spec.adapter == "gemini_native":
+            system_text = ""
+            gemini_parts = []
+            for msg in messages:
+                if msg.get("role") == "system":
+                    system_text = msg.get("content", "")
+                else:
+                    gemini_parts.append({"text": msg.get("content", "")})
+            if system_text:
+                gemini_parts.insert(0, {"text": f"SYSTEM INSTRUCTIONS:\n{system_text}\n\nUSER PROMPT:\n"})
+            
+            url = f"{spec.base_url.rstrip('/')}/models/{model_id}:generateContent?key={raw_key.strip()}"
+            headers = {"Content-Type": "application/json"}
+            payload = {
+                "contents": [{"role": "user", "parts": gemini_parts}],
+                "generationConfig": {
+                    "temperature": temperature,
+                    "maxOutputTokens": max_tokens
+                }
+            }
+            if json_mode:
+                payload["generationConfig"]["responseMimeType"] = "application/json"
+        else:
+            url = f"{spec.base_url.rstrip('/')}{spec.chat_path}"
+            headers = {
+                "Authorization": f"Bearer {raw_key.strip()}",
+                "Content-Type": "application/json",
+                "User-Agent": "AutoClipper-Engine/2.1"
+            }
+            payload = {
+                "model": model_id,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens
+            }
+            if json_mode and provider_id in ("groq", "openrouter"):
+                payload["response_format"] = {"type": "json_object"}
 
         try:
             print(f"\n[LLM HTTP OUT] POST {url}")
@@ -418,7 +441,10 @@ def call_with_rotation(
             # Sukses
             if resp.status_code == 200:
                 res_data = resp.json()
-                content = res_data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if spec.adapter == "gemini_native":
+                    content = res_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                else:
+                    content = res_data.get("choices", [{}])[0].get("message", {}).get("content", "")
                 mark_model_status(
                     user_id, provider_id, model_id, "available",
                     last_result="success", public_repo_id=public_repo_id, hf_token=hf_token

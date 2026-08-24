@@ -48,10 +48,10 @@ PROVIDER_REGISTRY: Dict[str, ProviderSpec] = {
     "gemini": ProviderSpec(
         provider_id="gemini",
         display_name="Google Gemini (AI Studio)",
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai",
+        base_url="https://generativelanguage.googleapis.com/v1beta",
         models_path="/models",
-        chat_path="/chat/completions",
-        adapter="openai_compatible",
+        chat_path="/models/gemini-1.5-flash:generateContent",
+        adapter="gemini_native",
         free_filter="all_free",
         speed_tier="fast",
         capabilities=["chat"],
