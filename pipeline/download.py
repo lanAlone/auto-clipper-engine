@@ -161,8 +161,7 @@ def download_audio_and_subtitles(
 
     base_args = [
         sys.executable, "-m", "yt_dlp",
-        "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
-        "--merge-output-format", "mp4",
+        "--format", "best[ext=mp4]/best",
         "-o", video_raw_template,
         "--no-playlist",
         "--force-ipv4",
