@@ -166,23 +166,20 @@ def download_audio_and_subtitles(
         "--no-playlist",
         "--force-ipv4",
         "--js-runtimes", f"node:{node_path}",
-        "--remote-components", "ejs:github",
-        "--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416"
+        "--remote-components", "ejs:github"
     ]
 
     tier_errors = []
     download_success = False
     raw_audio_path = ""
 
-    # Strategy: Loop through WARP proxy & direct with different player clients
-    # With yt-dlp >= 2025, tv, ios, and mweb are the most resilient against botguard
+    # Strategy: Loop through WARP proxy with different player clients
+    # Direct tiers have been removed as they are reliably blocked by YouTube
     strategies = [
         ("Tier 1 (WARP + iOS)", [WARP_PROXY], "youtube:player_client=ios"),
         ("Tier 2 (WARP + Android)", [WARP_PROXY], "youtube:player_client=android"),
         ("Tier 3 (WARP + TV/MWeb)", [WARP_PROXY], "youtube:player_client=tv,mweb"),
-        ("Tier 4 (Direct + iOS)", [], "youtube:player_client=ios"),
-        ("Tier 5 (Direct + Android)", [], "youtube:player_client=android"),
-        ("Tier 6 (Direct + Default)", [], "youtube:player_client=default")
+        ("Tier 4 (WARP + Default)", [WARP_PROXY], "youtube:player_client=default")
     ]
 
     for label, proxy_opts, client_arg in strategies:
@@ -190,9 +187,17 @@ def download_audio_and_subtitles(
         cmd = list(base_args)
         if proxy_opts:
             cmd.extend(["--proxy", proxy_opts[0]])
+        
         cmd.extend(["--extractor-args", client_arg])
-        if user_cookie_file and "ios" not in client_arg:
+        
+        # Batasi pemakaian PO token HANYA untuk client web-family
+        if "ios" not in client_arg and "android" not in client_arg:
+            cmd.extend(["--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416"])
+            
+        # Hapus penerusan cookie untuk iOS dan Android karena ditolak secara eksplisit/memicu SABR
+        if user_cookie_file and os.path.exists(user_cookie_file) and "ios" not in client_arg and "android" not in client_arg:
             cmd.extend(["--cookies", user_cookie_file])
+            
         cmd.append(url)
 
         # DEBUG: Cetak argumen yt-dlp yang sebenarnya untuk memastikan cookie path disertakan
@@ -227,19 +232,20 @@ def download_audio_and_subtitles(
                 print("[Downloader] SUKSES mengunduh audio via Playwright Embed Session!")
 
     # Fallback Tier 8: Playwright Native Stream Intercept
-    if not download_success:
-        print("[Downloader] Mencoba Tier 8: Playwright Native Stream Intercept...")
-        raw_audio_path = os.path.join(output_dir, f"{video_id}_raw_pw.m4a")
-        stream_url = get_stream_url_sync(url, user_cookie_file)
-        if stream_url:
-            print(f"[Downloader] Stream URL Ditemukan! Mengunduh dengan ffmpeg...")
-            cmd = ["ffmpeg", "-y", "-i", stream_url, "-c", "copy", raw_audio_path]
-            code, out, err = run_cmd(cmd, timeout_sec=300)
-            if code == 0 and os.path.exists(raw_audio_path) and os.path.getsize(raw_audio_path) > 100000:
-                download_success = True
-                print("[Downloader] SUKSES mengunduh audio via Playwright Native Intercept!")
-            else:
-                print(f"[Downloader] Gagal mengunduh stream URL dengan ffmpeg: {err[-100:]}")
+    # DINONAKTIFKAN: Sangat tidak stabil di headless CI/CD dan rawan silent timeout
+    # if not download_success:
+    #     print("[Downloader] Mencoba Tier 8: Playwright Native Stream Intercept...")
+    #     raw_audio_path = os.path.join(output_dir, f"{video_id}_raw_pw.m4a")
+    #     stream_url = get_stream_url_sync(url, user_cookie_file)
+    #     if stream_url:
+    #         print(f"[Downloader] Stream URL Ditemukan! Mengunduh dengan ffmpeg...")
+    #         cmd = ["ffmpeg", "-y", "-i", stream_url, "-c", "copy", raw_audio_path]
+    #         code, out, err = run_cmd(cmd, timeout_sec=300)
+    #         if code == 0 and os.path.exists(raw_audio_path) and os.path.getsize(raw_audio_path) > 100000:
+    #             download_success = True
+    #             print("[Downloader] SUKSES mengunduh audio via Playwright Native Intercept!")
+    #         else:
+    #             print(f"[Downloader] Gagal mengunduh stream URL dengan ffmpeg: {err[-100:]}")
 
     # Fallback to Invidious Proxy Stream (Tier 9 - Ultimate Cloud Bypass)
     if not download_success:
@@ -305,16 +311,15 @@ def download_clip_section(
     except Exception as e:
         print(f"[Downloader] Gagal memuat cookie: {e}")
 
+    # Direct tiers have been removed as they are reliably blocked by YouTube
     strategies = [
-        (WARP_PROXY, "youtube:player_client=ios"),
-        (WARP_PROXY, "youtube:player_client=android"),
-        (WARP_PROXY, "youtube:player_client=tv,mweb"),
-        (None, "youtube:player_client=ios"),
-        (None, "youtube:player_client=android"),
-        (None, "youtube:player_client=default")
+        ("Tier 1 (WARP + iOS)", [WARP_PROXY], "youtube:player_client=ios"),
+        ("Tier 2 (WARP + Android)", [WARP_PROXY], "youtube:player_client=android"),
+        ("Tier 3 (WARP + TV/MWeb)", [WARP_PROXY], "youtube:player_client=tv,mweb"),
+        ("Tier 4 (WARP + Default)", [WARP_PROXY], "youtube:player_client=default")
     ]
 
-    for proxy, client_arg in strategies:
+    for label, proxy_opts, client_arg in strategies:
         # Pendelegasian penuh pemotongan ke yt-dlp untuk mencegah IP Mismatch & SABR
         cmd = [
             sys.executable, "-m", "yt_dlp",
@@ -324,14 +329,19 @@ def download_clip_section(
             "--js-runtimes", "node",
             "--remote-components", "ejs:github",
             "--extractor-args", client_arg,
-            "--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416",
             "-o", out_mp4_path
         ]
+        
+        proxy = proxy_opts[0] if proxy_opts else None
         if proxy:
             cmd.extend(["--proxy", proxy])
+            
+        # Batasi pemakaian PO token HANYA untuk client web-family
+        if "ios" not in client_arg and "android" not in client_arg:
+            cmd.extend(["--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416"])
         
-        # Hapus penerusan cookie untuk iOS karena memicu SABR lebih agresif
-        if user_cookie_file and os.path.exists(user_cookie_file) and "ios" not in client_arg:
+        # Hapus penerusan cookie untuk iOS dan Android karena ditolak secara eksplisit/memicu SABR
+        if user_cookie_file and os.path.exists(user_cookie_file) and "ios" not in client_arg and "android" not in client_arg:
             cmd.extend(["--cookies", user_cookie_file])
             
         cmd.append(url)
@@ -359,7 +369,7 @@ def download_clip_section(
         "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
         "--js-runtimes", "node",
         "--remote-components", "ejs:github",
-        "--extractor-args", "youtube:player_client=android",
+        "--extractor-args", "youtube:player_client=tv,mweb",
         "--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416",
         "-o", temp_full_video_path,
         "--proxy", WARP_PROXY,

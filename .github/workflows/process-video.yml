@@ -63,6 +63,13 @@ jobs:
           cd remotion
           npm install
 
+      - name: Wait for PO Token Provider Service
+        run: |
+          echo "Waiting for bgutil-pot service on port 4416..."
+          for i in {1..15}; do
+            curl -s http://127.0.0.1:4416/ && echo "Service is up!" && break || sleep 2;
+          done
+
       - name: Execute Main Pipeline
         env:
           PYTHONPATH: .
