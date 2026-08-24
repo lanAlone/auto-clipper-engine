@@ -8,6 +8,11 @@ jobs:
   process-video:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
+    services:
+      bgutil-pot:
+        image: brainicism/bgutil-ytdlp-pot-provider:latest
+        ports:
+          - 4416:4416
 
     steps:
       - name: Checkout Code
@@ -47,7 +52,7 @@ jobs:
       - name: Install Python Dependencies
         run: |
           pip install --upgrade pip
-          pip install -U "yt-dlp[default]" yt-dlp-ejs youtube-transcript-api huggingface_hub requests cryptography playwright
+          pip install -U "yt-dlp[default]" yt-dlp-ejs youtube-transcript-api huggingface_hub requests cryptography playwright bgutil-ytdlp-pot-provider
 
       - name: Install Playwright Browsers (for Anti-Bot Stealth)
         run: |

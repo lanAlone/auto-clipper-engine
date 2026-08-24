@@ -166,7 +166,8 @@ def download_audio_and_subtitles(
         "--no-playlist",
         "--force-ipv4",
         "--js-runtimes", f"node:{node_path}",
-        "--remote-components", "ejs:github"
+        "--remote-components", "ejs:github",
+        "--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416"
     ]
 
     tier_errors = []
@@ -323,13 +324,14 @@ def download_clip_section(
             "--js-runtimes", "node",
             "--remote-components", "ejs:github",
             "--extractor-args", client_arg,
+            "--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416",
             "-o", out_mp4_path
         ]
         if proxy:
             cmd.extend(["--proxy", proxy])
         
-        # Selalu pastikan cookies dimasukkan jika tersedia (Fix Bug Direct Tanpa Cookies)
-        if user_cookie_file and os.path.exists(user_cookie_file):
+        # Hapus penerusan cookie untuk iOS karena memicu SABR lebih agresif
+        if user_cookie_file and os.path.exists(user_cookie_file) and "ios" not in client_arg:
             cmd.extend(["--cookies", user_cookie_file])
             
         cmd.append(url)
@@ -347,6 +349,60 @@ def download_clip_section(
         else:
             err_msg = err.strip()[-300:] if err else ''
             print(f"[Downloader] yt-dlp gagal (Proxy={bool(proxy)}). Code: {code}, Err: {err_msg}")
+
+    # FALLBACK BARU: Full Video Lokal 
+    print(f"[Downloader] --download-sections GAGAL semua. Memulai FALLBACK unduh FULL VIDEO untuk klip {clip_id}...")
+    temp_full_video_path = out_mp4_path.replace(".mp4", "_full.mp4")
+    
+    cmd_fallback = [
+        sys.executable, "-m", "yt_dlp",
+        "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
+        "--js-runtimes", "node",
+        "--remote-components", "ejs:github",
+        "--extractor-args", "youtube:player_client=android",
+        "--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416",
+        "-o", temp_full_video_path,
+        "--proxy", WARP_PROXY,
+    ]
+    if user_cookie_file and os.path.exists(user_cookie_file):
+        cmd_fallback.extend(["--cookies", user_cookie_file])
+        
+    cmd_fallback.append(url)
+    
+    cmd_safe_print = [c if "hf_" not in str(c) else "***" for c in cmd_fallback]
+    print(f"[Debug] Command yt-dlp (Fase 5 - FALLBACK FULL VIDEO): {' '.join(cmd_safe_print)}")
+
+    code, out, err = run_cmd(cmd_fallback, timeout_sec=1200) # 20 menit max
+    if code == 0 and os.path.exists(temp_full_video_path) and os.path.getsize(temp_full_video_path) > 50000:
+        print("[Downloader] Sukses mengunduh FULL VIDEO. Memotong segmen lokal dengan FFmpeg...")
+        
+        ffmpeg_cmd = [
+            "ffmpeg", "-y",
+            "-ss", str(max(0.0, start_sec - 0.5)),
+            "-i", temp_full_video_path,
+            "-t", str((end_sec - start_sec) + 1.0),
+            "-c", "copy",
+            "-avoid_negative_ts", "make_zero",
+            out_mp4_path
+        ]
+        
+        proc = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
+        
+        # Hapus file full video
+        try:
+            os.remove(temp_full_video_path)
+        except Exception:
+            pass
+            
+        if proc.returncode == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
+            print(f"[Downloader] Sukses memotong segmen {clip_id} dari Full Video!")
+            return out_mp4_path
+        else:
+            err_msg = proc.stderr.decode('utf-8', errors='ignore') if proc.stderr else ''
+            print(f"[Downloader] FFmpeg potong lokal gagal. Code: {proc.returncode}. Err: {err_msg[-300:]}")
+    else:
+        err_msg = err.strip()[-300:] if err else ''
+        print(f"[Downloader] Fallback unduh FULL VIDEO gagal. Code: {code}, Err: {err_msg}")
 
     # Fallback Tier 9 untuk Video
     print(f"[Downloader] Mencoba Tier 9 untuk segmen {clip_id}: Invidious Proxy Video Stream...")
