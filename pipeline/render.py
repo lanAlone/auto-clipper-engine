@@ -5,6 +5,7 @@ konfigurasi aman concurrency=1 dan hardware acceleration headless.
 """
 
 import os
+import sys
 import subprocess
 from typing import Optional
 
@@ -31,9 +32,9 @@ def render_clip(
         "src/index.ts", "Composition",
         abs_out,
         f"--props={abs_props}",
-        "--concurrency=1",
-        "--gl=angle",
+        "--gl=swiftshader",
         "--pixel-format=yuv420p",
+        "--log=info",
         "--overwrite"
     ]
 
@@ -42,10 +43,10 @@ def render_clip(
         proc = subprocess.run(
             cmd,
             cwd=remotion_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=sys.stdout,  # Biarkan log Remotion tampil langsung ke konsol secara real-time
+            stderr=sys.stderr,  # Jangan di-PIPE agar tidak tertahan buffer
             text=True,
-            timeout=timeout_sec,
+            timeout=1800,  # Beri waktu hingga 30 menit (untuk amannya)
             shell=True if os.name == "nt" else False
         )
         if proc.returncode != 0:
