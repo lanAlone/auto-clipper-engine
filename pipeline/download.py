@@ -299,8 +299,23 @@ def download_clip_section(
     except Exception as e:
         print(f"[Downloader] Gagal memuat cookie: {e}")
 
-    section_spec = f"*{ts_start}-{ts_end}"
-    print(f"[Downloader] Mengunduh segmen video '{clip_id}': rentang {ts_start} -> {ts_end}...")
+    cookie_header = ""
+    if user_cookie_file and os.path.exists(user_cookie_file):
+        try:
+            cookie_pairs = []
+            with open(user_cookie_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    if not line.strip() or line.strip().startswith('#') and not line.startswith('#HttpOnly_'):
+                        continue
+                    parts = line.strip().split('\t')
+                    if len(parts) >= 7:
+                        cookie_pairs.append(f"{parts[5]}={parts[6]}")
+            if cookie_pairs:
+                cookie_header = f"Cookie: {'; '.join(cookie_pairs)}\r\n"
+        except Exception:
+            pass
+
+    ffmpeg_headers = f"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n{cookie_header}"
 
     strategies = [
         (WARP_PROXY, "youtube:player_client=ios"),
@@ -312,16 +327,14 @@ def download_clip_section(
     ]
 
     for proxy, client_arg in strategies:
+        # TAHAP 1: Ekstrak URL Murni
         cmd = [
             sys.executable, "-m", "yt_dlp",
-            "--download-sections", section_spec,
+            "--print", "urls",
             "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
-            "--merge-output-format", "mp4",
-            "--force-keyframes-at-cuts",
             "--js-runtimes", "node",
             "--remote-components", "ejs:github",
-            "--extractor-args", client_arg,
-            "-o", out_mp4_path
+            "--extractor-args", client_arg
         ]
         if proxy:
             cmd.extend(["--proxy", proxy])
@@ -329,27 +342,43 @@ def download_clip_section(
             cmd.extend(["--cookies", user_cookie_file])
         cmd.append(url)
 
-        code, out, err = run_cmd(cmd, timeout_sec=180)
-        if code == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
-            print(f"[Downloader] Sukses mengunduh segmen {clip_id} (Proxy: {bool(proxy)}, Client: {client_arg})!")
-            return out_mp4_path
+        code, out, err = run_cmd(cmd, timeout_sec=90)
+        if code == 0 and out.strip():
+            urls = out.strip().split("\n")
+            if not urls:
+                continue
 
-    # Fallback Tier 8: Playwright Native Stream
-    print(f"[Downloader] Mencoba Tier 8 untuk segmen {clip_id}: Playwright Native Stream Intercept...")
-    stream_url = get_stream_url_sync(url, user_cookie_file)
-    if stream_url:
-        cmd = [
-            "ffmpeg", "-y",
-            "-ss", str(max(0.0, start_sec - 0.5)),
-            "-i", stream_url,
-            "-t", str((end_sec - start_sec) + 1.0),
-            "-c", "copy",
-            out_mp4_path
-        ]
-        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
-        if proc.returncode == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
-            print(f"[Downloader] Sukses mengunduh segmen {clip_id} via Playwright Native!")
-            return out_mp4_path
+            # TAHAP 2: Inject Headers ke FFmpeg
+            ffmpeg_cmd = ["ffmpeg", "-y"]
+            
+            if ffmpeg_headers:
+                ffmpeg_cmd.extend(["-headers", ffmpeg_headers])
+            ffmpeg_cmd.extend(["-ss", str(max(0.0, start_sec - 0.5))])
+            ffmpeg_cmd.extend(["-i", urls[0].strip()])
+            
+            if len(urls) > 1:
+                if ffmpeg_headers:
+                    ffmpeg_cmd.extend(["-headers", ffmpeg_headers])
+                ffmpeg_cmd.extend(["-ss", str(max(0.0, start_sec - 0.5))])
+                ffmpeg_cmd.extend(["-i", urls[1].strip()])
+            
+            ffmpeg_cmd.extend([
+                "-t", str((end_sec - start_sec) + 1.0),
+                "-c", "copy",
+                out_mp4_path
+            ])
+            
+            print(f"[Downloader] Mengeksekusi Direct FFmpeg Inject untuk {clip_id}...")
+            proc = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
+            
+            if proc.returncode == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
+                print(f"[Downloader] Sukses Direct FFmpeg Inject segmen {clip_id} (Proxy: {bool(proxy)}, Client: {client_arg})!")
+                return out_mp4_path
+            else:
+                err_msg = proc.stderr.decode('utf-8', errors='ignore') if proc.stderr else ''
+                print(f"[Downloader] FFmpeg Inject gagal. Code: {proc.returncode}. Err: {err_msg[-300:]}")
+        else:
+            print(f"[Downloader] Gagal ekstrak URL murni (Proxy={bool(proxy)}). Code: {code}")
 
     # Fallback Tier 9 untuk Video
     print(f"[Downloader] Mencoba Tier 9 untuk segmen {clip_id}: Invidious Proxy Video Stream...")
@@ -357,4 +386,4 @@ def download_clip_section(
         print(f"[Downloader] Sukses mengunduh segmen {clip_id} via Invidious Proxy!")
         return out_mp4_path
 
-    raise RuntimeError(f"Gagal mengunduh klip segmen {clip_id} setelah mencoba seluruh strategi WARP, Direct, dan Proxy.")
+    raise RuntimeError(f"Gagal mengunduh klip segmen {clip_id} setelah mencoba seluruh strategi Direct Inject dan Proxy.")
