@@ -304,24 +304,6 @@ def download_clip_section(
     except Exception as e:
         print(f"[Downloader] Gagal memuat cookie: {e}")
 
-    cookie_header = ""
-    if user_cookie_file and os.path.exists(user_cookie_file):
-        try:
-            cookie_pairs = []
-            with open(user_cookie_file, 'r', encoding='utf-8') as f:
-                for line in f:
-                    if not line.strip() or line.strip().startswith('#') and not line.startswith('#HttpOnly_'):
-                        continue
-                    parts = line.strip().split('\t')
-                    if len(parts) >= 7:
-                        cookie_pairs.append(f"{parts[5]}={parts[6]}")
-            if cookie_pairs:
-                cookie_header = f"Cookie: {'; '.join(cookie_pairs)}\r\n"
-        except Exception:
-            pass
-
-    ffmpeg_headers = f"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n{cookie_header}"
-
     strategies = [
         (WARP_PROXY, "youtube:player_client=ios"),
         (WARP_PROXY, "youtube:player_client=android"),
@@ -332,76 +314,39 @@ def download_clip_section(
     ]
 
     for proxy, client_arg in strategies:
-        # TAHAP 1: Ekstrak URL Murni & Headers dengan JSON
+        # Pendelegasian penuh pemotongan ke yt-dlp untuk mencegah IP Mismatch & SABR
         cmd = [
             sys.executable, "-m", "yt_dlp",
-            "--dump-json",
+            "--download-sections", f"*{start_sec}-{end_sec}",
+            "--force-keyframes-at-cuts",
             "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
             "--js-runtimes", "node",
             "--remote-components", "ejs:github",
-            "--extractor-args", client_arg
+            "--extractor-args", client_arg,
+            "-o", out_mp4_path
         ]
         if proxy:
             cmd.extend(["--proxy", proxy])
-        if user_cookie_file and "ios" not in client_arg:
+        
+        # Selalu pastikan cookies dimasukkan jika tersedia (Fix Bug Direct Tanpa Cookies)
+        if user_cookie_file and os.path.exists(user_cookie_file):
             cmd.extend(["--cookies", user_cookie_file])
+            
         cmd.append(url)
         
         # DEBUG print
         cmd_safe_print = [c if "hf_" not in str(c) else "***" for c in cmd]
         print(f"[Debug] Command yt-dlp (Fase 5 - {client_arg}): {' '.join(cmd_safe_print)}")
 
-        code, out, err = run_cmd(cmd, timeout_sec=90)
-        if code == 0 and out.strip():
-            try:
-                import json
-                info = json.loads(out.strip())
-                # requested_formats berisi list stream (video dan audio) jika terpisah, atau info langsung jika tergabung
-                formats = info.get("requested_formats", [info])
-                if not formats:
-                    continue
-
-                # TAHAP 2: Inject Headers persis seperti yt-dlp ke FFmpeg agar lolos BotGuard
-                ffmpeg_cmd = ["ffmpeg", "-y"]
-                
-                for fmt in formats:
-                    stream_url = fmt.get("url")
-                    headers_dict = fmt.get("http_headers", {})
-                    
-                    # yt-dlp JSON mungkin tidak memberikan Cookie dari browser file jika auth lewat file --cookies
-                    # Jadi kita pastikan header Cookie dimasukkan ke request FFmpeg jika tersedia
-                    if user_cookie_file and "ios" not in client_arg and cookie_header:
-                        # Hapus prefix "Cookie: " karena cookie_pairs langsung format K=V
-                        raw_cookie = cookie_header.replace("Cookie: ", "").strip()
-                        headers_dict["Cookie"] = raw_cookie
-                    
-                    header_str = "".join([f"{k}: {v}\r\n" for k, v in headers_dict.items()])
-                    
-                    if header_str:
-                        ffmpeg_cmd.extend(["-headers", header_str])
-                    ffmpeg_cmd.extend(["-ss", str(max(0.0, start_sec - 0.5))])
-                    ffmpeg_cmd.extend(["-i", stream_url])
-                
-                ffmpeg_cmd.extend([
-                    "-t", str((end_sec - start_sec) + 1.0),
-                    "-c", "copy",
-                    out_mp4_path
-                ])
-                
-                print(f"[Downloader] Mengeksekusi Direct FFmpeg Inject untuk {clip_id} (Client: {client_arg})...")
-                proc = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
-                
-                if proc.returncode == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
-                    print(f"[Downloader] Sukses Direct FFmpeg Inject segmen {clip_id} (Proxy: {bool(proxy)}, Client: {client_arg})!")
-                    return out_mp4_path
-                else:
-                    err_msg = proc.stderr.decode('utf-8', errors='ignore') if proc.stderr else ''
-                    print(f"[Downloader] FFmpeg Inject gagal. Code: {proc.returncode}. Err: {err_msg[-300:]}")
-            except Exception as e:
-                print(f"[Downloader] Gagal parsing JSON yt-dlp: {e}")
+        print(f"[Downloader] Mengunduh & memotong segmen {clip_id} via yt-dlp (Proxy: {bool(proxy)})...")
+        code, out, err = run_cmd(cmd, timeout_sec=300)
+        
+        if code == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
+            print(f"[Downloader] Sukses mengunduh klip {clip_id} (Proxy: {bool(proxy)}, Client: {client_arg})!")
+            return out_mp4_path
         else:
             err_msg = err.strip()[-300:] if err else ''
-            print(f"[Downloader] Gagal ekstrak JSON (Proxy={bool(proxy)}). Code: {code}, Err: {err_msg}")
+            print(f"[Downloader] yt-dlp gagal (Proxy={bool(proxy)}). Code: {code}, Err: {err_msg}")
 
     # Fallback Tier 9 untuk Video
     print(f"[Downloader] Mencoba Tier 9 untuk segmen {clip_id}: Invidious Proxy Video Stream...")
