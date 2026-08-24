@@ -127,14 +127,14 @@ def download_audio_and_subtitles(
     url: str,
     user_id: str,
     output_dir: str = "work/media"
-) -> Tuple[str, str, float, Optional[str], str]:
+) -> Tuple[str, str, float, Optional[str]]:
     """
-    FASE 1: Unduh FULL VIDEO (1080p), ekstrak audio untuk Whisper, dan ambil subtitle.
-    Mengembalikan (audio_whisper_path, video_id, duration_sec, subtitle_vtt_path, full_video_path).
+    FASE 1: Unduh HANYA audio ringan dan subtitle WebVTT untuk transkripsi.
+    Mengembalikan (audio_whisper_path, video_id, duration_sec, subtitle_vtt_path).
     """
     os.makedirs(output_dir, exist_ok=True)
     video_id = extract_video_id(url)
-    video_raw_template = os.path.join(output_dir, f"{video_id}_full.%(ext)s")
+    audio_raw_template = os.path.join(output_dir, f"{video_id}_raw.%(ext)s")
     audio_whisper_path = os.path.join(output_dir, f"{video_id}_whisper.mp3")
     sub_id_vtt = os.path.join(output_dir, f"{video_id}.id.vtt")
     sub_en_vtt = os.path.join(output_dir, f"{video_id}.en.vtt")
@@ -161,8 +161,8 @@ def download_audio_and_subtitles(
 
     base_args = [
         sys.executable, "-m", "yt_dlp",
-        "--format", "best[ext=mp4]/best",
-        "-o", video_raw_template,
+        "--format", "bestaudio/best",
+        "-o", audio_raw_template,
         "--no-playlist",
         "--force-ipv4",
         "--js-runtimes", f"node:{node_path}",
@@ -171,16 +171,16 @@ def download_audio_and_subtitles(
 
     tier_errors = []
     download_success = False
-    raw_video_path = ""
+    raw_audio_path = ""
 
     # Strategy: Loop through WARP proxy & direct with different player clients
     # With yt-dlp >= 2025, tv, ios, and mweb are the most resilient against botguard
     strategies = [
         ("Tier 1 (WARP + iOS)", [WARP_PROXY], "youtube:player_client=ios"),
-        ("Tier 2 (WARP + Android Creator)", [WARP_PROXY], "youtube:player_client=android_creator,android"),
-        ("Tier 3 (WARP + Web Creator)", [WARP_PROXY], "youtube:player_client=web_creator,web"),
+        ("Tier 2 (WARP + Android)", [WARP_PROXY], "youtube:player_client=android"),
+        ("Tier 3 (WARP + TV/MWeb)", [WARP_PROXY], "youtube:player_client=tv,mweb"),
         ("Tier 4 (Direct + iOS)", [], "youtube:player_client=ios"),
-        ("Tier 5 (Direct + Android Creator)", [], "youtube:player_client=android_creator,android"),
+        ("Tier 5 (Direct + Android)", [], "youtube:player_client=android"),
         ("Tier 6 (Direct + Default)", [], "youtube:player_client=default")
     ]
 
@@ -194,12 +194,16 @@ def download_audio_and_subtitles(
             cmd.extend(["--cookies", user_cookie_file])
         cmd.append(url)
 
-        code, out, err = run_cmd(cmd, timeout_sec=600)
-        raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_full")]
+        # DEBUG: Cetak argumen yt-dlp yang sebenarnya untuk memastikan cookie path disertakan
+        cmd_safe_print = [c if "hf_" not in str(c) else "***" for c in cmd]
+        print(f"[Debug] Command yt-dlp (Fase 1): {' '.join(cmd_safe_print)}")
+
+        code, out, err = run_cmd(cmd, timeout_sec=180)
+        raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
         if code == 0 and raw_files:
             download_success = True
-            raw_video_path = raw_files[0]
-            print(f"[Downloader] SUKSES mengunduh FULL VIDEO via {label}!")
+            raw_audio_path = raw_files[0]
+            print(f"[Downloader] SUKSES mengunduh audio via {label}!")
             break
         else:
             tier_errors.append(f"{label}: {err.strip().replace(chr(10), ' ')}")
@@ -214,12 +218,12 @@ def download_audio_and_subtitles(
                 "--extractor-args", "youtube:player_client=android,ios,mweb",
                 url
             ]
-            code5, out5, err5 = run_cmd(cmd, timeout_sec=600)
-            raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_full")]
+            code5, out5, err5 = run_cmd(cmd, timeout_sec=180)
+            raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
             if code5 == 0 and raw_files:
                 download_success = True
-                raw_video_path = raw_files[0]
-                print("[Downloader] SUKSES mengunduh FULL VIDEO via Playwright Embed Session!")
+                raw_audio_path = raw_files[0]
+                print("[Downloader] SUKSES mengunduh audio via Playwright Embed Session!")
 
     # Fallback Tier 8: Playwright Native Stream Intercept
     if not download_success:
@@ -246,13 +250,13 @@ def download_audio_and_subtitles(
             
     if not download_success:
         err_msg = " | ".join(tier_errors)
-        raise RuntimeError(f"Gagal mengunduh FULL VIDEO stream dari YouTube ({err_msg}).")
+        raise RuntimeError(f"Gagal mengunduh audio stream dari YouTube ({err_msg}).")
 
     # Ekstrak audio 16kHz 32kbps mono untuk Whisper
     print("[Downloader] Mengekstrak audio ringan dari video lokal untuk Whisper...")
-    downsampled = downsample_audio_for_groq(raw_video_path, audio_whisper_path)
+    downsampled = downsample_audio_for_groq(raw_audio_path, audio_whisper_path)
     if not downsampled:
-        raise RuntimeError("Gagal mengekstrak audio dari video lokal untuk Whisper.")
+        audio_whisper_path = raw_audio_path
 
     # Cek Subtitle VTT
     found_sub = None
@@ -261,28 +265,26 @@ def download_audio_and_subtitles(
     elif os.path.exists(sub_en_vtt):
         found_sub = sub_en_vtt
 
-    return audio_whisper_path, video_id, duration_sec, found_sub, raw_video_path
+    return audio_whisper_path, video_id, duration_sec, found_sub
 
 
 def download_clip_section(
-    full_video_path: str,
+    url: str,
+    user_id: str,
     clip_id: str,
     start_sec: float,
     end_sec: float,
     output_dir: str = "work/media"
 ) -> str:
     """
-    FASE 2: Memotong klip video dari file FULL VIDEO LOKAL.
-    Tidak ada lagi interaksi internet/YouTube di fase ini sehingga 100% Anti-BotGuard!
+    FASE 2: Mengunduh HANYA potongan video 30-60 detik yang terpilih untuk rendering.
     """
     os.makedirs(output_dir, exist_ok=True)
     out_mp4_path = os.path.join(output_dir, f"section_{clip_id}.mp4")
+    video_id = extract_video_id(url)
 
     if os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 100000:
         return out_mp4_path
-        
-    if not os.path.exists(full_video_path):
-        raise RuntimeError(f"File Full Video tidak ditemukan di: {full_video_path}")
 
     def sec_to_ts(s):
         m, sec = divmod(s, 60)
@@ -292,20 +294,119 @@ def download_clip_section(
     ts_start = sec_to_ts(max(0.0, start_sec - 0.5))
     ts_end = sec_to_ts(end_sec + 0.5)
 
-    print(f"[Downloader] Memotong segmen video '{clip_id}': rentang {ts_start} -> {ts_end} secara LOKAL...")
+    user_cookie_file = None
+    try:
+        user_cookie_file = get_user_cookie_file(user_id)
+        if user_cookie_file and os.path.exists(user_cookie_file):
+            print(f"[Downloader] Menggunakan Cookie otentikasi dari UI (Ukuran: {os.path.getsize(user_cookie_file)} bytes)")
+        else:
+            print("[Downloader] PERINGATAN: Tidak ada Cookie yang terdeteksi dari UI! YouTube berpotensi memblokir akses.")
+    except Exception as e:
+        print(f"[Downloader] Gagal memuat cookie: {e}")
 
-    cmd = [
-        "ffmpeg", "-y",
-        "-ss", str(max(0.0, start_sec - 0.5)),
-        "-i", full_video_path,
-        "-t", str((end_sec - start_sec) + 1.0),
-        "-c", "copy",
-        out_mp4_path
+    cookie_header = ""
+    if user_cookie_file and os.path.exists(user_cookie_file):
+        try:
+            cookie_pairs = []
+            with open(user_cookie_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    if not line.strip() or line.strip().startswith('#') and not line.startswith('#HttpOnly_'):
+                        continue
+                    parts = line.strip().split('\t')
+                    if len(parts) >= 7:
+                        cookie_pairs.append(f"{parts[5]}={parts[6]}")
+            if cookie_pairs:
+                cookie_header = f"Cookie: {'; '.join(cookie_pairs)}\r\n"
+        except Exception:
+            pass
+
+    ffmpeg_headers = f"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n{cookie_header}"
+
+    strategies = [
+        (WARP_PROXY, "youtube:player_client=ios"),
+        (WARP_PROXY, "youtube:player_client=android"),
+        (WARP_PROXY, "youtube:player_client=tv,mweb"),
+        (None, "youtube:player_client=ios"),
+        (None, "youtube:player_client=android"),
+        (None, "youtube:player_client=default")
     ]
-    
-    code, out, err = run_cmd(cmd, timeout_sec=180)
-    if code == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
-        print(f"[Downloader] Sukses memotong segmen {clip_id} secara lokal!")
+
+    for proxy, client_arg in strategies:
+        # TAHAP 1: Ekstrak URL Murni & Headers dengan JSON
+        cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--dump-json",
+            "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
+            "--js-runtimes", "node",
+            "--remote-components", "ejs:github",
+            "--extractor-args", client_arg
+        ]
+        if proxy:
+            cmd.extend(["--proxy", proxy])
+        if user_cookie_file and "ios" not in client_arg:
+            cmd.extend(["--cookies", user_cookie_file])
+        cmd.append(url)
+        
+        # DEBUG print
+        cmd_safe_print = [c if "hf_" not in str(c) else "***" for c in cmd]
+        print(f"[Debug] Command yt-dlp (Fase 5 - {client_arg}): {' '.join(cmd_safe_print)}")
+
+        code, out, err = run_cmd(cmd, timeout_sec=90)
+        if code == 0 and out.strip():
+            try:
+                import json
+                info = json.loads(out.strip())
+                # requested_formats berisi list stream (video dan audio) jika terpisah, atau info langsung jika tergabung
+                formats = info.get("requested_formats", [info])
+                if not formats:
+                    continue
+
+                # TAHAP 2: Inject Headers persis seperti yt-dlp ke FFmpeg agar lolos BotGuard
+                ffmpeg_cmd = ["ffmpeg", "-y"]
+                
+                for fmt in formats:
+                    stream_url = fmt.get("url")
+                    headers_dict = fmt.get("http_headers", {})
+                    
+                    # yt-dlp JSON mungkin tidak memberikan Cookie dari browser file jika auth lewat file --cookies
+                    # Jadi kita pastikan header Cookie dimasukkan ke request FFmpeg jika tersedia
+                    if user_cookie_file and "ios" not in client_arg and cookie_header:
+                        # Hapus prefix "Cookie: " karena cookie_pairs langsung format K=V
+                        raw_cookie = cookie_header.replace("Cookie: ", "").strip()
+                        headers_dict["Cookie"] = raw_cookie
+                    
+                    header_str = "".join([f"{k}: {v}\r\n" for k, v in headers_dict.items()])
+                    
+                    if header_str:
+                        ffmpeg_cmd.extend(["-headers", header_str])
+                    ffmpeg_cmd.extend(["-ss", str(max(0.0, start_sec - 0.5))])
+                    ffmpeg_cmd.extend(["-i", stream_url])
+                
+                ffmpeg_cmd.extend([
+                    "-t", str((end_sec - start_sec) + 1.0),
+                    "-c", "copy",
+                    out_mp4_path
+                ])
+                
+                print(f"[Downloader] Mengeksekusi Direct FFmpeg Inject untuk {clip_id} (Client: {client_arg})...")
+                proc = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
+                
+                if proc.returncode == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
+                    print(f"[Downloader] Sukses Direct FFmpeg Inject segmen {clip_id} (Proxy: {bool(proxy)}, Client: {client_arg})!")
+                    return out_mp4_path
+                else:
+                    err_msg = proc.stderr.decode('utf-8', errors='ignore') if proc.stderr else ''
+                    print(f"[Downloader] FFmpeg Inject gagal. Code: {proc.returncode}. Err: {err_msg[-300:]}")
+            except Exception as e:
+                print(f"[Downloader] Gagal parsing JSON yt-dlp: {e}")
+        else:
+            err_msg = err.strip()[-300:] if err else ''
+            print(f"[Downloader] Gagal ekstrak JSON (Proxy={bool(proxy)}). Code: {code}, Err: {err_msg}")
+
+    # Fallback Tier 9 untuk Video
+    print(f"[Downloader] Mencoba Tier 9 untuk segmen {clip_id}: Invidious Proxy Video Stream...")
+    if download_video_section_via_invidious(video_id, start_sec, end_sec, out_mp4_path):
+        print(f"[Downloader] Sukses mengunduh segmen {clip_id} via Invidious Proxy!")
         return out_mp4_path
-    else:
-        raise RuntimeError(f"Gagal memotong segmen {clip_id} secara lokal. Err: {err[:200] if err else 'None'}")
+
+    raise RuntimeError(f"Gagal mengunduh klip segmen {clip_id} setelah mencoba seluruh strategi Direct Inject dan Proxy.")
