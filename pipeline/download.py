@@ -21,7 +21,7 @@ MAX_DURATION_SECONDS = 10800  # 3 Jam Penuh (Podcast Panjang)
 WARP_PROXY = "socks5://127.0.0.1:40000"
 
 
-def run_cmd(cmd_list: list, timeout_sec: int = 300) -> Tuple[int, str, str]:
+def run_cmd(cmd_list: list, timeout_sec: int = 300, env: Optional[Dict[str, str]] = None) -> Tuple[int, str, str]:
     """Menjalankan subprocess dengan timeout dan penangkapan output."""
     try:
         proc = subprocess.run(
@@ -29,7 +29,8 @@ def run_cmd(cmd_list: list, timeout_sec: int = 300) -> Tuple[int, str, str]:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            timeout=timeout_sec
+            timeout=timeout_sec,
+            env=env
         )
         return proc.returncode, proc.stdout, proc.stderr
     except subprocess.TimeoutExpired:
@@ -79,13 +80,17 @@ def check_video_metadata(url: str, cookie_file: Optional[str] = None) -> Tuple[b
                 "--remote-components", "ejs:github",
                 "--extractor-args", client_arg
             ]
-            if use_proxy:
-                cmd.extend(["--proxy", WARP_PROXY])
             if cookie_file and os.path.exists(cookie_file) and "ios" not in client_arg:
                 cmd.extend(["--cookies", cookie_file])
             cmd.append(url)
 
-            code, out, err = run_cmd(cmd, timeout_sec=30)
+            run_env = os.environ.copy()
+            if use_proxy:
+                run_env["HTTP_PROXY"] = WARP_PROXY
+                run_env["HTTPS_PROXY"] = WARP_PROXY
+                run_env["NO_PROXY"] = "127.0.0.1,localhost,::1"
+
+            code, out, err = run_cmd(cmd, timeout_sec=30, env=run_env)
             if code == 0 and "|||" in out:
                 parts = out.strip().split("|||")
                 dur_str = parts[0].strip() if len(parts) > 0 else "0"
@@ -185,8 +190,12 @@ def download_audio_and_subtitles(
     for label, proxy_opts, client_arg in strategies:
         print(f"[Downloader] Mencoba {label}...")
         cmd = list(base_args)
+        
+        run_env = os.environ.copy()
         if proxy_opts:
-            cmd.extend(["--proxy", proxy_opts[0]])
+            run_env["HTTP_PROXY"] = proxy_opts[0]
+            run_env["HTTPS_PROXY"] = proxy_opts[0]
+            run_env["NO_PROXY"] = "127.0.0.1,localhost,::1"
         
         cmd.extend(["--extractor-args", client_arg])
         
@@ -204,7 +213,7 @@ def download_audio_and_subtitles(
         cmd_safe_print = [c if "hf_" not in str(c) else "***" for c in cmd]
         print(f"[Debug] Command yt-dlp (Fase 1): {' '.join(cmd_safe_print)}")
 
-        code, out, err = run_cmd(cmd, timeout_sec=180)
+        code, out, err = run_cmd(cmd, timeout_sec=180, env=run_env)
         raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
         if code == 0 and raw_files:
             download_success = True
@@ -333,8 +342,11 @@ def download_clip_section(
         ]
         
         proxy = proxy_opts[0] if proxy_opts else None
+        run_env = os.environ.copy()
         if proxy:
-            cmd.extend(["--proxy", proxy])
+            run_env["HTTP_PROXY"] = proxy
+            run_env["HTTPS_PROXY"] = proxy
+            run_env["NO_PROXY"] = "127.0.0.1,localhost,::1"
             
         # Batasi pemakaian PO token HANYA untuk client web-family
         if "ios" not in client_arg and "android" not in client_arg:
@@ -351,7 +363,7 @@ def download_clip_section(
         print(f"[Debug] Command yt-dlp (Fase 5 - {client_arg}): {' '.join(cmd_safe_print)}")
 
         print(f"[Downloader] Mengunduh & memotong segmen {clip_id} via yt-dlp (Proxy: {bool(proxy)})...")
-        code, out, err = run_cmd(cmd, timeout_sec=300)
+        code, out, err = run_cmd(cmd, timeout_sec=300, env=run_env)
         
         if code == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
             print(f"[Downloader] Sukses mengunduh klip {clip_id} (Proxy: {bool(proxy)}, Client: {client_arg})!")
@@ -369,20 +381,28 @@ def download_clip_section(
         "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
         "--js-runtimes", "node",
         "--remote-components", "ejs:github",
-        "--extractor-args", "youtube:player_client=tv,mweb",
-        "--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416",
-        "-o", temp_full_video_path,
-        "--proxy", WARP_PROXY,
+        "-o", temp_full_video_path
     ]
+    
+    proxy = WARP_PROXY
+    run_env = os.environ.copy()
+    if proxy:
+        run_env["HTTP_PROXY"] = proxy
+        run_env["HTTPS_PROXY"] = proxy
+        run_env["NO_PROXY"] = "127.0.0.1,localhost,::1"
+
+    # Gunakan TV/MWeb untuk fallback full video karena paling stabil
+    cmd_fallback.extend(["--extractor-args", "youtube:player_client=tv,mweb"])
+    cmd_fallback.extend(["--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416"])
     if user_cookie_file and os.path.exists(user_cookie_file):
         cmd_fallback.extend(["--cookies", user_cookie_file])
-        
+            
     cmd_fallback.append(url)
     
     cmd_safe_print = [c if "hf_" not in str(c) else "***" for c in cmd_fallback]
     print(f"[Debug] Command yt-dlp (Fase 5 - FALLBACK FULL VIDEO): {' '.join(cmd_safe_print)}")
 
-    code, out, err = run_cmd(cmd_fallback, timeout_sec=1200) # 20 menit max
+    code, out, err = run_cmd(cmd_fallback, timeout_sec=1200, env=run_env) # 20 menit max
     if code == 0 and os.path.exists(temp_full_video_path) and os.path.getsize(temp_full_video_path) > 50000:
         print("[Downloader] Sukses mengunduh FULL VIDEO. Memotong segmen lokal dengan FFmpeg...")
         
