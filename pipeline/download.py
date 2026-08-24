@@ -276,6 +276,7 @@ def download_clip_section(
     """
     os.makedirs(output_dir, exist_ok=True)
     out_mp4_path = os.path.join(output_dir, f"section_{clip_id}.mp4")
+    video_id = extract_video_id(url)
 
     if os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 100000:
         return out_mp4_path
