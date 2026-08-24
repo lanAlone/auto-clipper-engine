@@ -127,14 +127,14 @@ def download_audio_and_subtitles(
     url: str,
     user_id: str,
     output_dir: str = "work/media"
-) -> Tuple[str, str, float, Optional[str]]:
+) -> Tuple[str, str, float, Optional[str], str]:
     """
-    FASE 1: Unduh HANYA audio ringan dan subtitle WebVTT untuk transkripsi.
-    Mengembalikan (audio_whisper_path, video_id, duration_sec, subtitle_vtt_path).
+    FASE 1: Unduh FULL VIDEO (1080p), ekstrak audio untuk Whisper, dan ambil subtitle.
+    Mengembalikan (audio_whisper_path, video_id, duration_sec, subtitle_vtt_path, full_video_path).
     """
     os.makedirs(output_dir, exist_ok=True)
     video_id = extract_video_id(url)
-    audio_raw_template = os.path.join(output_dir, f"{video_id}_raw.%(ext)s")
+    video_raw_template = os.path.join(output_dir, f"{video_id}_full.%(ext)s")
     audio_whisper_path = os.path.join(output_dir, f"{video_id}_whisper.mp3")
     sub_id_vtt = os.path.join(output_dir, f"{video_id}.id.vtt")
     sub_en_vtt = os.path.join(output_dir, f"{video_id}.en.vtt")
@@ -161,8 +161,9 @@ def download_audio_and_subtitles(
 
     base_args = [
         sys.executable, "-m", "yt_dlp",
-        "--format", "bestaudio/best",
-        "-o", audio_raw_template,
+        "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
+        "--merge-output-format", "mp4",
+        "-o", video_raw_template,
         "--no-playlist",
         "--force-ipv4",
         "--js-runtimes", f"node:{node_path}",
@@ -171,7 +172,7 @@ def download_audio_and_subtitles(
 
     tier_errors = []
     download_success = False
-    raw_audio_path = ""
+    raw_video_path = ""
 
     # Strategy: Loop through WARP proxy & direct with different player clients
     # With yt-dlp >= 2025, tv, ios, and mweb are the most resilient against botguard
@@ -194,12 +195,12 @@ def download_audio_and_subtitles(
             cmd.extend(["--cookies", user_cookie_file])
         cmd.append(url)
 
-        code, out, err = run_cmd(cmd, timeout_sec=180)
-        raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
+        code, out, err = run_cmd(cmd, timeout_sec=600)
+        raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_full")]
         if code == 0 and raw_files:
             download_success = True
-            raw_audio_path = raw_files[0]
-            print(f"[Downloader] SUKSES mengunduh audio via {label}!")
+            raw_video_path = raw_files[0]
+            print(f"[Downloader] SUKSES mengunduh FULL VIDEO via {label}!")
             break
         else:
             tier_errors.append(f"{label}: {err.strip().replace(chr(10), ' ')}")
@@ -214,12 +215,12 @@ def download_audio_and_subtitles(
                 "--extractor-args", "youtube:player_client=android,ios,mweb",
                 url
             ]
-            code5, out5, err5 = run_cmd(cmd, timeout_sec=180)
-            raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_raw")]
+            code5, out5, err5 = run_cmd(cmd, timeout_sec=600)
+            raw_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(f"{video_id}_full")]
             if code5 == 0 and raw_files:
                 download_success = True
-                raw_audio_path = raw_files[0]
-                print("[Downloader] SUKSES mengunduh audio via Playwright Embed Session!")
+                raw_video_path = raw_files[0]
+                print("[Downloader] SUKSES mengunduh FULL VIDEO via Playwright Embed Session!")
 
     # Fallback Tier 8: Playwright Native Stream Intercept
     if not download_success:
@@ -246,12 +247,13 @@ def download_audio_and_subtitles(
             
     if not download_success:
         err_msg = " | ".join(tier_errors)
-        raise RuntimeError(f"Gagal mengunduh audio stream dari YouTube ({err_msg}).")
+        raise RuntimeError(f"Gagal mengunduh FULL VIDEO stream dari YouTube ({err_msg}).")
 
     # Ekstrak audio 16kHz 32kbps mono untuk Whisper
-    downsampled = downsample_audio_for_groq(raw_audio_path, audio_whisper_path)
+    print("[Downloader] Mengekstrak audio ringan dari video lokal untuk Whisper...")
+    downsampled = downsample_audio_for_groq(raw_video_path, audio_whisper_path)
     if not downsampled:
-        audio_whisper_path = raw_audio_path
+        raise RuntimeError("Gagal mengekstrak audio dari video lokal untuk Whisper.")
 
     # Cek Subtitle VTT
     found_sub = None
@@ -260,26 +262,28 @@ def download_audio_and_subtitles(
     elif os.path.exists(sub_en_vtt):
         found_sub = sub_en_vtt
 
-    return audio_whisper_path, video_id, duration_sec, found_sub
+    return audio_whisper_path, video_id, duration_sec, found_sub, raw_video_path
 
 
 def download_clip_section(
-    url: str,
-    user_id: str,
+    full_video_path: str,
     clip_id: str,
     start_sec: float,
     end_sec: float,
     output_dir: str = "work/media"
 ) -> str:
     """
-    FASE 2: Mengunduh HANYA potongan video 30-60 detik yang terpilih untuk rendering.
+    FASE 2: Memotong klip video dari file FULL VIDEO LOKAL.
+    Tidak ada lagi interaksi internet/YouTube di fase ini sehingga 100% Anti-BotGuard!
     """
     os.makedirs(output_dir, exist_ok=True)
     out_mp4_path = os.path.join(output_dir, f"section_{clip_id}.mp4")
-    video_id = extract_video_id(url)
 
     if os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 100000:
         return out_mp4_path
+        
+    if not os.path.exists(full_video_path):
+        raise RuntimeError(f"File Full Video tidak ditemukan di: {full_video_path}")
 
     def sec_to_ts(s):
         m, sec = divmod(s, 60)
@@ -289,101 +293,20 @@ def download_clip_section(
     ts_start = sec_to_ts(max(0.0, start_sec - 0.5))
     ts_end = sec_to_ts(end_sec + 0.5)
 
-    user_cookie_file = None
-    try:
-        user_cookie_file = get_user_cookie_file(user_id)
-        if user_cookie_file and os.path.exists(user_cookie_file):
-            print(f"[Downloader] Menggunakan Cookie otentikasi dari UI (Ukuran: {os.path.getsize(user_cookie_file)} bytes)")
-        else:
-            print("[Downloader] PERINGATAN: Tidak ada Cookie yang terdeteksi dari UI! YouTube berpotensi memblokir akses.")
-    except Exception as e:
-        print(f"[Downloader] Gagal memuat cookie: {e}")
+    print(f"[Downloader] Memotong segmen video '{clip_id}': rentang {ts_start} -> {ts_end} secara LOKAL...")
 
-    cookie_header = ""
-    if user_cookie_file and os.path.exists(user_cookie_file):
-        try:
-            cookie_pairs = []
-            with open(user_cookie_file, 'r', encoding='utf-8') as f:
-                for line in f:
-                    if not line.strip() or line.strip().startswith('#') and not line.startswith('#HttpOnly_'):
-                        continue
-                    parts = line.strip().split('\t')
-                    if len(parts) >= 7:
-                        cookie_pairs.append(f"{parts[5]}={parts[6]}")
-            if cookie_pairs:
-                cookie_header = f"Cookie: {'; '.join(cookie_pairs)}\r\n"
-        except Exception:
-            pass
-
-    ffmpeg_headers = f"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n{cookie_header}"
-
-    strategies = [
-        (WARP_PROXY, "youtube:player_client=ios"),
-        (WARP_PROXY, "youtube:player_client=android_creator"),
-        (WARP_PROXY, "youtube:player_client=web_creator"),
-        (None, "youtube:player_client=ios"),
-        (None, "youtube:player_client=android_creator"),
-        (None, "youtube:player_client=web_creator")
+    cmd = [
+        "ffmpeg", "-y",
+        "-ss", str(max(0.0, start_sec - 0.5)),
+        "-i", full_video_path,
+        "-t", str((end_sec - start_sec) + 1.0),
+        "-c", "copy",
+        out_mp4_path
     ]
-
-    for proxy, client_arg in strategies:
-        # TAHAP 1: Ekstrak URL Murni
-        cmd = [
-            sys.executable, "-m", "yt_dlp",
-            "--print", "urls",
-            "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
-            "--js-runtimes", "node",
-            "--remote-components", "ejs:github",
-            "--extractor-args", client_arg
-        ]
-        if proxy:
-            cmd.extend(["--proxy", proxy])
-        if user_cookie_file:
-            cmd.extend(["--cookies", user_cookie_file])
-        cmd.append(url)
-
-        code, out, err = run_cmd(cmd, timeout_sec=90)
-        if code == 0 and out.strip():
-            urls = out.strip().split("\n")
-            if not urls:
-                continue
-
-            # TAHAP 2: Inject Headers ke FFmpeg
-            ffmpeg_cmd = ["ffmpeg", "-y"]
-            
-            if ffmpeg_headers:
-                ffmpeg_cmd.extend(["-headers", ffmpeg_headers])
-            ffmpeg_cmd.extend(["-ss", str(max(0.0, start_sec - 0.5))])
-            ffmpeg_cmd.extend(["-i", urls[0].strip()])
-            
-            if len(urls) > 1:
-                if ffmpeg_headers:
-                    ffmpeg_cmd.extend(["-headers", ffmpeg_headers])
-                ffmpeg_cmd.extend(["-ss", str(max(0.0, start_sec - 0.5))])
-                ffmpeg_cmd.extend(["-i", urls[1].strip()])
-            
-            ffmpeg_cmd.extend([
-                "-t", str((end_sec - start_sec) + 1.0),
-                "-c", "copy",
-                out_mp4_path
-            ])
-            
-            print(f"[Downloader] Mengeksekusi Direct FFmpeg Inject untuk {clip_id}...")
-            proc = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
-            
-            if proc.returncode == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
-                print(f"[Downloader] Sukses Direct FFmpeg Inject segmen {clip_id} (Proxy: {bool(proxy)}, Client: {client_arg})!")
-                return out_mp4_path
-            else:
-                err_msg = proc.stderr.decode('utf-8', errors='ignore') if proc.stderr else ''
-                print(f"[Downloader] FFmpeg Inject gagal. Code: {proc.returncode}. Err: {err_msg[-300:]}")
-        else:
-            print(f"[Downloader] Gagal ekstrak URL murni (Proxy={bool(proxy)}). Code: {code}")
-
-    # Fallback Tier 9 untuk Video
-    print(f"[Downloader] Mencoba Tier 9 untuk segmen {clip_id}: Invidious Proxy Video Stream...")
-    if download_video_section_via_invidious(video_id, start_sec, end_sec, out_mp4_path):
-        print(f"[Downloader] Sukses mengunduh segmen {clip_id} via Invidious Proxy!")
+    
+    code, out, err = run_cmd(cmd, timeout_sec=180)
+    if code == 0 and os.path.exists(out_mp4_path) and os.path.getsize(out_mp4_path) > 50000:
+        print(f"[Downloader] Sukses memotong segmen {clip_id} secara lokal!")
         return out_mp4_path
-
-    raise RuntimeError(f"Gagal mengunduh klip segmen {clip_id} setelah mencoba seluruh strategi Direct Inject dan Proxy.")
+    else:
+        raise RuntimeError(f"Gagal memotong segmen {clip_id} secara lokal. Err: {err[:200] if err else 'None'}")

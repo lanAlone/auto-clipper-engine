@@ -52,7 +52,7 @@ def main():
         # STAGE 1: EKSTRAKSI AUDIO & SUBTITLE CEPAT (FASE 1)
         # ----------------------------------------------------------------------
         update_status(job_id, user_id, "downloading", "Mengambil audio podcast & memeriksa subtitle YouTube...")
-        audio_path, video_id, duration_sec, vtt_path = download_audio_and_subtitles(
+        audio_path, video_id, duration_sec, vtt_path, full_video_path = download_audio_and_subtitles(
             url=url,
             user_id=user_id,
             output_dir="work/media"
@@ -118,10 +118,9 @@ def main():
             
             print(f"[Pipeline] Memproses Klip #{idx+1}/{len(candidates)} ({cid}) [Rentang: {c_start:.1f}s - {c_end:.1f}s]...")
 
-            # 1. Download potongan klip saja
+            # 1. Potong klip dari full video lokal
             section_video_path = download_clip_section(
-                url=url,
-                user_id=user_id,
+                full_video_path=full_video_path,
                 clip_id=cid,
                 start_sec=c_start,
                 end_sec=c_end,
